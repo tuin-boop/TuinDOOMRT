@@ -25,15 +25,12 @@ You must supply a legally owned Doom IWAD. Commercial IWADs are not included.
 ## Default controls
 
 - `N`: randomize the sun direction and its intensity.
-- `,`: decrease sun intensity by 20.
-- `.`: increase sun intensity by 20.
 - `F`: toggle the flashlight.
 
-Sun intensity is clamped to the 75–500 range. The launcher can configure the sun-cycle key.
+The launcher can configure the sun-cycle key and the starting lighting intensity.
 
 ## Known limitations
 
-- The Spider Mastermind faces and moves correctly, but its custom death animation is not final.
 - Experimental enhanced-liquid shaders are not enabled in this stable build.
 - External gameplay and weapon mods can replace projectile actors and therefore bypass some RT projectile lighting or effects.
 - Compatibility varies between WADs; the launcher includes a stock Doom II scene toggle where appropriate.

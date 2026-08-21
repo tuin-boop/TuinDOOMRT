@@ -542,24 +542,6 @@ CCMD( rt_autosun_previous )
     RT_ApplySunCycleAngle( int{ cvar::rt_autosun_seed } );
 }
 
-static void RT_AdjustSunIntensity( float delta )
-{
-    const float intensity = std::clamp( float{ cvar::rt_sun_intensity } + delta, 75.f, 500.f );
-    cvar::rt_sun = true;
-    cvar::rt_sun_intensity = intensity;
-    Printf( "RT sun intensity: %.0f (range 75-500)\n", intensity );
-}
-
-CCMD( rt_sun_intensity_down )
-{
-    RT_AdjustSunIntensity( -20.f );
-}
-
-CCMD( rt_sun_intensity_up )
-{
-    RT_AdjustSunIntensity( 20.f );
-}
-
 bool RT_ForceNoClassicMode()
 {
     if( g_rt_cutscenename && g_rt_cutscenename[ 0 ] != '\0' )

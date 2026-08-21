@@ -34,7 +34,5 @@ enum
 	Button_Speed,	
 	Button_Use,		
 	Button_MoveUp,	
-	Button_RTSunIntensityDown,
-	Button_RTSunIntensityUp,
 	NUM_ACTIONS
 };

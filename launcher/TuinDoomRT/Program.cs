@@ -69,7 +69,7 @@ namespace TuinDoomRT
 
         public WelcomeForm()
         {
-            Text = "Welcome to TuinDOOM RT 1.4.7.5";
+            Text = "Welcome to TuinDOOM RT 1.4.7.6";
             ClientSize = new Size(960, 720);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -81,7 +81,7 @@ namespace TuinDoomRT
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
 
             var title = new Label {
-                Text = "TUINDOOM RT 1.4.7.5", ForeColor = Color.White,
+                Text = "TUINDOOM RT 1.4.7.6", ForeColor = Color.White,
                 Font = new Font("Segoe UI", 23F, FontStyle.Bold), AutoSize = true, Location = new Point(28, 18)
             };
             var subtitle = new Label {
@@ -104,7 +104,7 @@ namespace TuinDoomRT
                        "• Requires a legal DOOM or DOOM II IWAD; no commercial game data is included.\r\n" +
                        "• General WADs use automatic RT lighting, so results naturally vary by map.\r\n" +
                        "• Experimental liquid shaders and newer raw voxel packs are disabled for stability.\r\n" +
-                       "• N randomizes sun angle + intensity (75–500). Hold , / . to tune intensity. F toggles flashlight.",
+                       "• N randomizes the sun angle and intensity. F toggles the flashlight.",
                 ForeColor = Color.FromArgb(220, 228, 229), Location = new Point(30, 540), Size = new Size(900, 94),
                 Font = new Font("Segoe UI", 10F)
             };
