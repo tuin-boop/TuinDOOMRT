@@ -1,5 +1,5 @@
 #define AppName "TuinDoom RT"
-#define AppVersion "1.4.7.5"
+#define AppVersion "1.4.7.6"
 #define RepoRoot SourcePath + "\.."
 
 [Setup]
@@ -35,6 +35,9 @@ Source: "{#RepoRoot}\build\launcher\TuinDoomRT.exe"; DestDir: "{app}"; Flags: ig
 Source: "{#RepoRoot}\build\launcher\Assets\*"; DestDir: "{app}\Assets"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#RepoRoot}\build\test-release\*"; DestDir: "{app}\Game"; Excludes: "*.log,gzdoom*.exe,rt\scenes\*,Mods\*"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#RepoRoot}\build\test-release\gzdoom-stable.exe"; DestDir: "{app}\Game"; DestName: "gzdoom.exe"; Flags: ignoreversion
+Source: "{#RepoRoot}\compat\spider-death\zscript\tuindoom\spider_death.zs"; DestDir: "{app}\Game\rt\wad\zscript\tuindoom"; Flags: ignoreversion
+Source: "{#RepoRoot}\compat\spider-death\filter\doom.id.doom2\zscript.zc"; DestDir: "{app}\Game\rt\wad\filter\doom.id.doom2"; Flags: ignoreversion
+Source: "{#RepoRoot}\installer\game\tuindoom-bindings.cfg"; DestDir: "{app}\Game"; Flags: ignoreversion
 Source: "{#RepoRoot}\build\test-release\rt\scenes\cs_intro\*"; DestDir: "{app}\Game\rt\scenes\cs_intro"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#RepoRoot}\build\test-release\rt\scenes\mainmenu\*"; DestDir: "{app}\Game\rt\scenes\mainmenu"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#RepoRoot}\build\test-release\rt\scenes\rtempty\*"; DestDir: "{app}\Game\rt\scenes\rtempty"; Flags: ignoreversion recursesubdirs createallsubdirs

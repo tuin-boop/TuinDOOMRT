@@ -67,7 +67,10 @@ class TuinSpiderMastermind : SpiderMastermind replaces SpiderMastermind
 		SPID S 1 A_TuinSpiderExplosionBurst;
 		SPID S 1 A_TuinSpiderExplosionBurst;
 		SPID S 8;
-		SPID S -1 A_BossDeath;
+		// Death frames reuse the intact pain mesh to keep the RT model small.
+		// Fire the map's boss-death special while hidden, then remove that mesh
+		// instead of leaving an apparently living Mastermind in the level.
+		TNT1 A 0 A_BossDeath;
 		Stop;
 	}
 }

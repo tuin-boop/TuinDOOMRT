@@ -599,33 +599,6 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	base = G_BaseTiccmd (); 
 	*cmd = *base;
 
-#if HAVE_RT
-	// These are real held actions because the Windows raw-input path intentionally
-	// drops keyboard auto-repeat events. Apply once immediately, then repeat at a
-	// modest rate so comma/period can be held without flooding the console.
-	static int rtSunDownNextTic = 0;
-	static int rtSunUpNextTic = 0;
-	auto updateHeldSunControl = [](int button, int& nextTic, const char* command)
-	{
-		if (buttonMap.ButtonPressed(button))
-		{
-			C_DoCommand(command);
-			nextTic = gametic + 9;
-		}
-		else if (buttonMap.ButtonDown(button) && gametic >= nextTic)
-		{
-			C_DoCommand(command);
-			nextTic = gametic + 3;
-		}
-		else if (!buttonMap.ButtonDown(button))
-		{
-			nextTic = 0;
-		}
-	};
-	updateHeldSunControl(Button_RTSunIntensityDown, rtSunDownNextTic, "rt_sun_intensity_down");
-	updateHeldSunControl(Button_RTSunIntensityUp, rtSunUpNextTic, "rt_sun_intensity_up");
-#endif
-
 	cmd->consistancy = consistancy[consoleplayer][(maketic/ticdup)%BACKUPTICS];
 
 	strafe = buttonMap.ButtonDown(Button_Strafe);
