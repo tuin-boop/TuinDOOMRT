@@ -1,0 +1,10 @@
+/* Default WASD keybindings for all games */
+
+w +forward
+s +back
+a +moveleft
+d +moveright
+e +use
+space +use
+mouse2 +altattack
+c rt_classic_toggle

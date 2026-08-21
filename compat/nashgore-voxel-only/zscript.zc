@@ -1,0 +1,12 @@
+version "4.11.3"
+
+// Tell NashGore to use its voxel-aware physical-gib behavior. Visual effects
+// without an RT-compatible voxel replacement are suppressed by transparent
+// sprite overrides in this compatibility package.
+class TuinDoomNashGoreVoxelHandler : EventHandler
+{
+    override void WorldLoaded(WorldEvent event)
+    {
+        NashGoreHandler.SetHasVoxels(true);
+    }
+}

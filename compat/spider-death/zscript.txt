@@ -1,0 +1,15 @@
+version "4.10"
+
+#include "zscript/ui/statusbar/doom_sbar_rt.zs"
+#include "zscript/engine/ui/menu/listmenuitems_rt.zs"
+
+#include "zscript/CheelloVox/CheelloActorPlugin.zc"
+#include "zscript/CheelloVox/CheelloRocket.zc"
+#include "zscript/CheelloVox/CheelloRotateToCameraPlugin.zc"
+#include "zscript/CheelloVox/CheelloSpinPlugin.zc"
+#include "zscript/CheelloVox/CheelloVoxHandler.zc"
+#include "zscript/CheelloVox/CheelloVoxStatics.zc"
+#include "zscript/CheelloVox/RT_VoxelExporter.zc"
+
+#include "zscript/rtcutscene/firststart.zc"
+#include "zscript/tuindoom/spider_death.zs"
