@@ -126,7 +126,11 @@ bool RT_ForceCaptureMouse()
 }
 
 
-#define RT_HOOK_INTRO      1
+// The optional cs_intro scene contains more dynamic vertices than RTGL 1.6.3
+// can upload. Starting it after the first-start settings causes RTGL1.dll to
+// dereference a failed upload on clean installations. Keep the setup pages,
+// but finish startup directly instead of launching the oversized intro.
+#define RT_HOOK_INTRO      0
 #define RT_INTRO_SKIPPABLE 0
 
 #define RT_INTRO_CONTINUEMUSICTOMAINMENU 1

@@ -69,7 +69,7 @@ namespace TuinDoomRT
 
         public WelcomeForm()
         {
-            Text = "Welcome to TuinDOOM RT 1.4.7.6";
+            Text = "Welcome to TuinDOOM RT 1.4.7.7";
             ClientSize = new Size(960, 720);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -81,7 +81,7 @@ namespace TuinDoomRT
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
 
             var title = new Label {
-                Text = "TUINDOOM RT 1.4.7.6", ForeColor = Color.White,
+                Text = "TUINDOOM RT 1.4.7.7", ForeColor = Color.White,
                 Font = new Font("Segoe UI", 23F, FontStyle.Bold), AutoSize = true, Location = new Point(28, 18)
             };
             var subtitle = new Label {
