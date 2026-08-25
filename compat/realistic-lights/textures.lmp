@@ -30,3 +30,36 @@ WallTexture TUE3SKY, 7096, 887
     Patch "textures/tuindoom/e3inferno360.png", 3548, 0
     Patch "textures/tuindoom/e3inferno360.png", 5322, 0
 }
+
+WallTexture TUD21SKY, 7096, 887
+{
+    // Doom II MAP01-MAP11: storm-lit wasteland.
+    XScale 6.9296875
+    YScale 6.9296875
+    Patch "textures/tuindoom/doom2-wasteland360.png", 0, 0
+    Patch "textures/tuindoom/doom2-wasteland360.png", 1774, 0
+    Patch "textures/tuindoom/doom2-wasteland360.png", 3548, 0
+    Patch "textures/tuindoom/doom2-wasteland360.png", 5322, 0
+}
+
+WallTexture TUD22SKY, 7096, 887
+{
+    // Doom II MAP12-MAP20: burning city skyline.
+    XScale 6.9296875
+    YScale 6.9296875
+    Patch "textures/tuindoom/doom2-city360.png", 0, 0
+    Patch "textures/tuindoom/doom2-city360.png", 1774, 0
+    Patch "textures/tuindoom/doom2-city360.png", 3548, 0
+    Patch "textures/tuindoom/doom2-city360.png", 5322, 0
+}
+
+WallTexture TUD23SKY, 7096, 887
+{
+    // Doom II MAP21-MAP32: sunless infernal abyss.
+    XScale 6.9296875
+    YScale 6.9296875
+    Patch "textures/tuindoom/doom2-hell360.png", 0, 0
+    Patch "textures/tuindoom/doom2-hell360.png", 1774, 0
+    Patch "textures/tuindoom/doom2-hell360.png", 3548, 0
+    Patch "textures/tuindoom/doom2-hell360.png", 5322, 0
+}

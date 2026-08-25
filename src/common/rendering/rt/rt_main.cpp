@@ -177,6 +177,7 @@ namespace cvar
     RT_CVAR( rt_doom_e1_realistic_lights, false, "use the brown Martian landscape and synchronized visible sun on stock E1M1-E1M8")
     RT_CVAR( rt_doom_e2_realistic_lights, false, "use the Deimos landscape and hidden red rift light on stock E2M1-E2M8")
     RT_CVAR( rt_doom_e3_realistic_lights, false, "use the Inferno landscape and hidden burning-horizon light on stock E3M1-E3M8")
+    RT_CVAR( rt_doom2_realistic_lights, false, "use three authored skies and synchronized lighting on stock Doom II MAP01-MAP32")
     RT_CVAR( rt_doom_e1_sun_size,        8.0f,   "visible Episode 1 sun angular diameter in degrees")
 
     RT_CVAR( rt_decals,                 true,   "draw decals. NOTE: impacts CPU performance, as gzdoom requires a doom-wall to be fullyparsed to submit its decals :(")
@@ -557,6 +558,34 @@ bool RT_UseDoomE3RealisticLights( const FLevelLocals* level )
     return fileSystem.GetFileContainer( level->lumpnum ) == fileSystem.GetIwadNum();
 }
 
+int RT_GetDoom2RealisticGroup( const FLevelLocals* level )
+{
+    if( !bool{ cvar::rt_doom2_realistic_lights } || !level || !rt_isdoom2 )
+    {
+        return 0;
+    }
+
+    const std::string_view mapName{ level->MapName.GetChars() };
+    if( mapName.size() != 5 ||
+        std::tolower( static_cast< unsigned char >( mapName[ 0 ] ) ) != 'm' ||
+        std::tolower( static_cast< unsigned char >( mapName[ 1 ] ) ) != 'a' ||
+        std::tolower( static_cast< unsigned char >( mapName[ 2 ] ) ) != 'p' ||
+        mapName[ 3 ] < '0' || mapName[ 3 ] > '9' ||
+        mapName[ 4 ] < '0' || mapName[ 4 ] > '9' )
+    {
+        return 0;
+    }
+
+    const int mapNumber = ( mapName[ 3 ] - '0' ) * 10 + ( mapName[ 4 ] - '0' );
+    if( mapNumber < 1 || mapNumber > 32 ||
+        fileSystem.GetFileContainer( level->lumpnum ) != fileSystem.GetIwadNum() )
+    {
+        return 0;
+    }
+
+    return mapNumber <= 11 ? 1 : ( mapNumber <= 20 ? 2 : 3 );
+}
+
 namespace
 {
 struct DoomE1SunPreset
@@ -621,6 +650,34 @@ DoomE3HorizonLightPreset RT_GetDoomE3HorizonLightPreset( int seed )
     };
     constexpr int presetCount = int( std::size( presets ) );
     return presets[ ( ( seed % presetCount ) + presetCount ) % presetCount ];
+}
+
+struct Doom2ChapterLightPreset
+{
+    float altitude;
+    float azimuth;
+};
+
+Doom2ChapterLightPreset RT_GetDoom2ChapterLightPreset( int group, int seed )
+{
+    constexpr Doom2ChapterLightPreset wasteland[] = {
+        { 32.f, 304.f }, { 25.f, 330.f }, { 38.f, 286.f },
+        { 30.f, 56.f },  { 22.f, 34.f },  { 36.f, 74.f },
+    };
+    constexpr Doom2ChapterLightPreset city[] = {
+        { 42.f, 315.f }, { 35.f, 292.f }, { 48.f, 338.f },
+        { 40.f, 45.f },  { 32.f, 68.f },  { 46.f, 22.f },
+    };
+    constexpr Doom2ChapterLightPreset hell[] = {
+        { 14.f, 205.f }, { 10.f, 250.f }, { 18.f, 165.f },
+        { 12.f, 115.f }, { 20.f, 305.f }, { 16.f, 35.f },
+    };
+
+    const auto pick = [ seed ]( const auto& presets ) {
+        const int count = int( std::size( presets ) );
+        return presets[ ( ( seed % count ) + count ) % count ];
+    };
+    return group == 1 ? pick( wasteland ) : ( group == 2 ? pick( city ) : pick( hell ) );
 }
 
 bool RT_EnsureDoomE1BillboardTexture( const char* sourceName,
@@ -800,6 +857,17 @@ static void RT_ApplySunCycleAngle( int seed )
         cvar::rt_sun_b         = preset.azimuth;
         Printf( "RT Episode 3 horizon-light position %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
                 seed, preset.altitude, preset.azimuth, float{ cvar::rt_sun_intensity } );
+        return;
+    }
+
+    if( const int group = RT_GetDoom2RealisticGroup( primaryLevel ); group != 0 )
+    {
+        const Doom2ChapterLightPreset preset = RT_GetDoom2ChapterLightPreset( group, seed );
+        cvar::rt_sun   = true;
+        cvar::rt_sun_a = preset.altitude;
+        cvar::rt_sun_b = preset.azimuth;
+        Printf( "RT Doom II chapter %d light position %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
+                group, seed, preset.altitude, preset.azimuth, float{ cvar::rt_sun_intensity } );
         return;
     }
 
@@ -5027,8 +5095,10 @@ void RTFrameBuffer::RT_DrawFrame()
     const bool useDoomE1RealisticLights = RT_UseDoomE1RealisticLights( primaryLevel );
     const bool useDoomE2RealisticLights = RT_UseDoomE2RealisticLights( primaryLevel );
     const bool useDoomE3RealisticLights = RT_UseDoomE3RealisticLights( primaryLevel );
+    const int useDoom2RealisticGroup = RT_GetDoom2RealisticGroup( primaryLevel );
     const bool useDoomRealisticLights =
-        useDoomE1RealisticLights || useDoomE2RealisticLights || useDoomE3RealisticLights;
+        useDoomE1RealisticLights || useDoomE2RealisticLights || useDoomE3RealisticLights ||
+        useDoom2RealisticGroup != 0;
 
     if( bool{ cvar::rt_sun } && float{ cvar::rt_sun_intensity } > 0 )
     {
@@ -5179,6 +5249,38 @@ void RTFrameBuffer::RT_DrawFrame()
         }
     }
 
+    if( useDoom2RealisticGroup != 0 )
+    {
+        const int seed = int{ cvar::rt_autosun_seed };
+        const Doom2ChapterLightPreset preset =
+            RT_GetDoom2ChapterLightPreset( useDoom2RealisticGroup, seed );
+        const float selectedIntensity =
+            std::clamp( float{ cvar::rt_sun_intensity }, 0.f, 500.f );
+        sun.active          = true;
+        sun.altitude        = preset.altitude;
+        sun.azimuth         = preset.azimuth;
+        sun.intensity       = selectedIntensity > 0.f && useDoom2RealisticGroup < 3
+                                  ? std::max( selectedIntensity,
+                                              useDoom2RealisticGroup == 1 ? 145.f : 120.f )
+                                  : selectedIntensity;
+        sun.angularDiameter = useDoom2RealisticGroup == 3 ? 3.5f : 0.8f;
+        sun.color = useDoom2RealisticGroup == 1
+                        ? rt.rgUtilPackColorByte4D( 255, 216, 168, 255 )
+                        : ( useDoom2RealisticGroup == 2
+                                ? rt.rgUtilPackColorByte4D( 255, 202, 158, 255 )
+                                : rt.rgUtilPackColorByte4D( 255, 72, 34, 255 ) );
+
+        static std::string lastReportedDoom2Chapter;
+        std::string reportKey = RT_GetMapName() ? RT_GetMapName() : "";
+        reportKey += ':' + std::to_string( seed );
+        if( reportKey != lastReportedDoom2Chapter )
+        {
+            Printf( "RT Doom II realistic chapter %d light %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
+                    useDoom2RealisticGroup, seed, preset.altitude, preset.azimuth, sun.intensity );
+            lastReportedDoom2Chapter = std::move( reportKey );
+        }
+    }
+
     if( sun.active )
     {
         float altitude = to_rad( sun.altitude );
@@ -5213,7 +5315,9 @@ void RTFrameBuffer::RT_DrawFrame()
         RgResult r = rt.rgUploadLight( &i );
         RG_CHECK( r );
 
-        if( useDoomE1RealisticLights && g_rt_mainCameraValid &&
+        if( ( useDoomE1RealisticLights ||
+              ( useDoom2RealisticGroup > 0 && useDoom2RealisticGroup < 3 ) ) &&
+            g_rt_mainCameraValid &&
             RT_EnsureDoomE1SunTexture() )
         {
             // Keep the visible body at the exact source direction of the light.
@@ -5266,9 +5370,10 @@ void RTFrameBuffer::RT_DrawFrame()
         .portalNormalTwirl                     = false,
     };
 
-    const float realisticSkyLimit = useDoomE3RealisticLights
-                                        ? 58.f
-                                        : ( useDoomE2RealisticLights ? 64.f : 72.f );
+    const float realisticSkyLimit =
+        useDoomE3RealisticLights || useDoom2RealisticGroup == 3
+            ? 58.f
+            : ( useDoomE2RealisticLights || useDoom2RealisticGroup == 2 ? 64.f : 72.f );
     const float mapSkyIntensity = useDoomRealisticLights
                                       ? std::min( float{ cvar::rt_sky }, realisticSkyLimit )
                                       : float{ cvar::rt_sky };

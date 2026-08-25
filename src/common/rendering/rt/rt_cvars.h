@@ -24,6 +24,7 @@ EXTERN_CVAR( Bool, rt_decals )
 EXTERN_CVAR( Bool, rt_doom_e1_realistic_lights )
 EXTERN_CVAR( Bool, rt_doom_e2_realistic_lights )
 EXTERN_CVAR( Bool, rt_doom_e3_realistic_lights )
+EXTERN_CVAR( Bool, rt_doom2_realistic_lights )
 
 extern bool rt_available_dlss2;
 extern bool rt_available_dlss3fg;

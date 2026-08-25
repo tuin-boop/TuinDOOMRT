@@ -105,6 +105,33 @@ static bool RT_UseDoomE3RealisticSky(const FLevelLocals* level)
 
 	return fileSystem.GetFileContainer(level->lumpnum) == fileSystem.GetIwadNum();
 }
+
+static int RT_GetDoom2RealisticSkyGroup(const FLevelLocals* level)
+{
+	if (!bool{ cvar::rt_doom2_realistic_lights } || !level || !rt_isdoom2)
+	{
+		return 0;
+	}
+
+	const std::string_view mapName{ level->MapName.GetChars() };
+	if (mapName.size() != 5 ||
+		std::tolower(static_cast<unsigned char>(mapName[0])) != 'm' ||
+		std::tolower(static_cast<unsigned char>(mapName[1])) != 'a' ||
+		std::tolower(static_cast<unsigned char>(mapName[2])) != 'p' ||
+		mapName[3] < '0' || mapName[3] > '9' || mapName[4] < '0' || mapName[4] > '9')
+	{
+		return 0;
+	}
+
+	const int mapNumber = (mapName[3] - '0') * 10 + (mapName[4] - '0');
+	if (mapNumber < 1 || mapNumber > 32 ||
+		fileSystem.GetFileContainer(level->lumpnum) != fileSystem.GetIwadNum())
+	{
+		return 0;
+	}
+
+	return mapNumber <= 11 ? 1 : (mapNumber <= 20 ? 2 : 3);
+}
 #endif
 
 //
@@ -179,6 +206,24 @@ void InitSkyMap(FLevelLocals *Level)
 			if (mapName != lastReportedMap)
 			{
 				Printf("RT realistic Episode 3 sky active on %s\n", mapName.c_str());
+				lastReportedMap = mapName;
+			}
+		}
+	}
+	else if (const int group = RT_GetDoom2RealisticSkyGroup(Level); group != 0)
+	{
+		const char* textureName = group == 1 ? "TUD21SKY" : (group == 2 ? "TUD22SKY" : "TUD23SKY");
+		const FTextureID realisticSky = TexMan.CheckForTexture(
+			textureName, ETextureType::Wall, FTextureManager::TEXMAN_TryAny);
+		if (realisticSky.Exists())
+		{
+			Level->skytexture1 = realisticSky;
+			Level->skytexture2 = realisticSky;
+			static std::string lastReportedMap;
+			const std::string mapName = Level->MapName.GetChars();
+			if (mapName != lastReportedMap)
+			{
+				Printf("RT realistic Doom II chapter %d sky active on %s\n", group, mapName.c_str());
 				lastReportedMap = mapName;
 			}
 		}
