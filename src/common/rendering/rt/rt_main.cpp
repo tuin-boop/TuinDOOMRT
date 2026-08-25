@@ -174,6 +174,8 @@ namespace cvar
     RT_CVAR( rt_sky_saturation,         1.f,    "sky saturation")
     RT_CVAR( rt_sky_stretch,            1.2f,   "how much to stretch the sky sphere along the vertical axis")
     RT_CVAR( rt_sky_always,             true,   "always submit sky geometry (even if it's not visible in primary view)")
+    RT_CVAR( rt_doom_e1_realistic_lights, false, "use the Mars panorama and synchronized visible sun on stock E1M1-E1M8")
+    RT_CVAR( rt_doom_e1_sun_size,        8.0f,   "visible Episode 1 sun angular diameter in degrees")
 
     RT_CVAR( rt_decals,                 true,   "draw decals. NOTE: impacts CPU performance, as gzdoom requires a doom-wall to be fullyparsed to submit its decals :(")
 
@@ -311,6 +313,11 @@ extern void  RT_ForceIntroCutsceneMusicStop();
 extern void RT_CloseLauncherWindow();
 
 auto RT_MakeUpRightForwardVectors( const DRotator& rotation ) -> std::tuple< RgFloat3D, RgFloat3D, RgFloat3D >;
+
+RgFloat3D g_rt_mainCameraPosition{};
+RgFloat3D g_rt_mainCameraUp{};
+RgFloat3D g_rt_mainCameraRight{};
+bool      g_rt_mainCameraValid = false;
 
 namespace
 {
@@ -491,6 +498,107 @@ const char* RT_GetMapName()
     return nullptr;
 }
 
+bool RT_UseDoomE1RealisticLights( const FLevelLocals* level )
+{
+    if( !bool{ cvar::rt_doom_e1_realistic_lights } || !level || rt_isdoom2 )
+    {
+        return false;
+    }
+
+    const std::string_view mapName{ level->MapName.GetChars() };
+    if( mapName.size() != 4 || std::tolower( static_cast< unsigned char >( mapName[ 0 ] ) ) != 'e' ||
+        mapName[ 1 ] != '1' || std::tolower( static_cast< unsigned char >( mapName[ 2 ] ) ) != 'm' ||
+        mapName[ 3 ] < '1' || mapName[ 3 ] > '8' )
+    {
+        return false;
+    }
+
+    // Do not force the special sky onto PWAD replacements that happen to use an
+    // Episode 1 map name. This mode is deliberately scoped to the stock maps.
+    return fileSystem.GetFileContainer( level->lumpnum ) == fileSystem.GetIwadNum();
+}
+
+namespace
+{
+struct DoomE1SunPreset
+{
+    float altitude;
+    float azimuth;
+    float intensity;
+};
+
+DoomE1SunPreset RT_GetDoomE1SunPreset( int seed )
+{
+    // Mars is painted into the raster sky and cannot occlude a separate sun
+    // sprite. These positions stay in the clear upper-left and upper-right arcs.
+    constexpr DoomE1SunPreset presets[] = {
+        { 54.f, 324.f, 105.f },
+        { 46.f, 306.f, 95.f },
+        { 60.f, 336.f, 112.f },
+        { 52.f, 54.f, 102.f },
+        { 44.f, 36.f, 92.f },
+        { 58.f, 66.f, 110.f },
+    };
+    constexpr int presetCount = int( std::size( presets ) );
+    return presets[ ( ( seed % presetCount ) + presetCount ) % presetCount ];
+}
+
+bool RT_EnsureDoomE1SunTexture()
+{
+    constexpr const char* SourceName = "textures/tuindoom/sun.png";
+    constexpr const char* RuntimeName = "tuindoom/e1_sun";
+    static bool uploaded = false;
+
+    if( uploaded )
+    {
+        return true;
+    }
+
+    const FTextureID id = TexMan.CheckForTexture(
+        SourceName, ETextureType::Any, FTextureManager::TEXMAN_TryAny );
+    FGameTexture* gameTexture = id.Exists() ? TexMan.GetGameTexture( id, false ) : nullptr;
+    FTexture* texture = gameTexture ? gameTexture->GetTexture() : nullptr;
+    if( !texture )
+    {
+        return false;
+    }
+
+    auto buffer = texture->CreateTexBuffer( 0, CTF_ProcessData );
+    if( !buffer.mBuffer || buffer.mWidth <= 0 || buffer.mHeight <= 0 )
+    {
+        return false;
+    }
+
+    auto details = RgOriginalTextureDetailsEXT{
+        .sType  = RG_STRUCTURE_TYPE_ORIGINAL_TEXTURE_DETAILS_EXT,
+        .pNext  = nullptr,
+        .flags  = 0u,
+        .format = RG_FORMAT_B8G8R8A8_SRGB,
+    };
+    auto info = RgOriginalTextureInfo{
+        .sType        = RG_STRUCTURE_TYPE_ORIGINAL_TEXTURE_INFO,
+        .pNext        = &details,
+        .pTextureName = RuntimeName,
+        .pPixels      = buffer.mBuffer,
+        .size         = { static_cast< uint32_t >( buffer.mWidth ),
+                          static_cast< uint32_t >( buffer.mHeight ) },
+        .filter       = RG_SAMPLER_FILTER_LINEAR,
+        .addressModeU = RG_SAMPLER_ADDRESS_MODE_CLAMP,
+        .addressModeV = RG_SAMPLER_ADDRESS_MODE_CLAMP,
+    };
+
+    if( rt.rgProvideOriginalTexture( &info ) != RG_RESULT_SUCCESS )
+    {
+        return false;
+    }
+
+    uploaded = true;
+    Printf( "RT Doom Episode 1 visible sun texture ready (%dx%d)\n",
+            buffer.mWidth, buffer.mHeight );
+    return true;
+}
+} // namespace
+
 CCMD( rt_printscenekey )
 {
     const char* sceneName = RT_GetMapName();
@@ -499,6 +607,18 @@ CCMD( rt_printscenekey )
 
 static void RT_ApplySunCycleAngle( int seed )
 {
+    if( RT_UseDoomE1RealisticLights( primaryLevel ) )
+    {
+        const DoomE1SunPreset preset = RT_GetDoomE1SunPreset( seed );
+        cvar::rt_sun           = true;
+        cvar::rt_sun_a         = preset.altitude;
+        cvar::rt_sun_b         = preset.azimuth;
+        cvar::rt_sun_intensity = preset.intensity;
+        Printf( "RT Episode 1 sun position %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
+                seed, preset.altitude, preset.azimuth, preset.intensity );
+        return;
+    }
+
     uint32_t randomState = 2166136261u;
     if( const char* sceneName = RT_GetMapName() )
     {
@@ -3014,6 +3134,11 @@ public:
             .cameraFar   = cvar::rt_zfar,
         };
 
+        g_rt_mainCameraPosition = info.position;
+        g_rt_mainCameraUp       = info.up;
+        g_rt_mainCameraRight    = info.right;
+        g_rt_mainCameraValid    = true;
+
         RgResult r = rt.rgUploadCamera( &info );
         RG_CHECK( r );
 
@@ -4715,6 +4840,8 @@ void RTFrameBuffer::RT_DrawFrame()
         RgColor4DPacked32 color{};
     } sun;
 
+    const bool useDoomE1RealisticLights = RT_UseDoomE1RealisticLights( primaryLevel );
+
     if( bool{ cvar::rt_sun } && float{ cvar::rt_sun_intensity } > 0 )
     {
         sun.active          = true;
@@ -4794,6 +4921,28 @@ void RTFrameBuffer::RT_DrawFrame()
         }
     }
 
+    if( useDoomE1RealisticLights )
+    {
+        const int seed = int{ cvar::rt_autosun_seed };
+        const DoomE1SunPreset preset = RT_GetDoomE1SunPreset( seed );
+        sun.active          = true;
+        sun.altitude        = preset.altitude;
+        sun.azimuth         = preset.azimuth;
+        sun.intensity       = preset.intensity;
+        sun.angularDiameter = 0.8f;
+        sun.color           = rt.rgUtilPackColorByte4D( 255, 229, 194, 255 );
+
+        static std::string lastReportedRealisticSun;
+        std::string reportKey = RT_GetMapName() ? RT_GetMapName() : "";
+        reportKey += ':' + std::to_string( seed );
+        if( reportKey != lastReportedRealisticSun )
+        {
+            Printf( "RT Episode 1 realistic sun %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
+                    seed, preset.altitude, preset.azimuth, preset.intensity );
+            lastReportedRealisticSun = std::move( reportKey );
+        }
+    }
+
     if( sun.active )
     {
         float altitude = to_rad( sun.altitude );
@@ -4827,6 +4976,88 @@ void RTFrameBuffer::RT_DrawFrame()
 
         RgResult r = rt.rgUploadLight( &i );
         RG_CHECK( r );
+
+        if( useDoomE1RealisticLights && g_rt_mainCameraValid &&
+            RT_EnsureDoomE1SunTexture() )
+        {
+            // Keep the visible body at the exact source direction of the light.
+            // Tiled flare geometry lets walls and roofs hide only the covered part.
+            constexpr float distance = 200.f;
+            const float angularDiameter = std::clamp(
+                float{ cvar::rt_doom_e1_sun_size }, 1.f, 20.f );
+            const float halfSize = std::tan( to_rad( angularDiameter ) * 0.5f ) * distance;
+
+            RgFloat3D center{};
+            for( int axis = 0; axis < 3; ++axis )
+            {
+                center.data[ axis ] =
+                    g_rt_mainCameraPosition.data[ axis ] - dir.data[ axis ] * distance;
+            }
+
+            const auto makeVertex = [ & ]( float rightScale,
+                                           float upScale,
+                                           float u,
+                                           float v ) {
+                RgPrimitiveVertex vertex{};
+                for( int axis = 0; axis < 3; ++axis )
+                {
+                    vertex.position[ axis ] =
+                        center.data[ axis ] +
+                        g_rt_mainCameraRight.data[ axis ] * rightScale +
+                        g_rt_mainCameraUp.data[ axis ] * upScale;
+                }
+                vertex.texCoord[ 0 ] = u;
+                vertex.texCoord[ 1 ] = v;
+                vertex.color = rt.rgUtilPackColorByte4D( 255, 255, 255, 255 );
+                return vertex;
+            };
+
+            constexpr uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
+            constexpr int OcclusionTiles = 12;
+            for( int tileY = 0; tileY < OcclusionTiles; ++tileY )
+            {
+                for( int tileX = 0; tileX < OcclusionTiles; ++tileX )
+                {
+                    const float u0 = float( tileX ) / float( OcclusionTiles );
+                    const float u1 = float( tileX + 1 ) / float( OcclusionTiles );
+                    const float v0 = float( tileY ) / float( OcclusionTiles );
+                    const float v1 = float( tileY + 1 ) / float( OcclusionTiles );
+                    const float right0 = std::lerp( -halfSize, halfSize, u0 );
+                    const float right1 = std::lerp( -halfSize, halfSize, u1 );
+                    const float up0 = std::lerp( halfSize, -halfSize, v0 );
+                    const float up1 = std::lerp( halfSize, -halfSize, v1 );
+                    const RgPrimitiveVertex vertices[] = {
+                        makeVertex( right0, up0, u0, v0 ),
+                        makeVertex( right1, up0, u1, v0 ),
+                        makeVertex( right1, up1, u1, v1 ),
+                        makeVertex( right0, up1, u0, v1 ),
+                    };
+
+                    RgFloat3D pointToCheck{};
+                    const float tileRight = ( right0 + right1 ) * 0.5f;
+                    const float tileUp = ( up0 + up1 ) * 0.5f;
+                    for( int axis = 0; axis < 3; ++axis )
+                    {
+                        pointToCheck.data[ axis ] =
+                            center.data[ axis ] +
+                            g_rt_mainCameraRight.data[ axis ] * tileRight +
+                            g_rt_mainCameraUp.data[ axis ] * tileUp;
+                    }
+
+                    auto sunTile = RgLensFlareInfo{
+                        .sType        = RG_STRUCTURE_TYPE_LENS_FLARE_INFO,
+                        .pNext        = nullptr,
+                        .vertexCount  = static_cast< uint32_t >( std::size( vertices ) ),
+                        .pVertices    = vertices,
+                        .indexCount   = static_cast< uint32_t >( std::size( indices ) ),
+                        .pIndices     = indices,
+                        .pTextureName = "tuindoom/e1_sun",
+                        .pointToCheck = pointToCheck,
+                    };
+                    RG_CHECK( rt.rgUploadLensFlare( &sunTile ) );
+                }
+            }
+        }
     }
 
     RT_UploadExportableSectorLights();
@@ -4871,13 +5102,20 @@ void RTFrameBuffer::RT_DrawFrame()
         .portalNormalTwirl                     = false,
     };
 
+    const float mapSkyIntensity = useDoomE1RealisticLights
+                                      ? std::min( float{ cvar::rt_sky }, 72.f )
+                                      : float{ cvar::rt_sky };
+    const float mapSkySaturation = useDoomE1RealisticLights
+                                       ? std::min( float{ cvar::rt_sky_saturation }, 0.65f )
+                                       : float{ cvar::rt_sky_saturation };
+
     auto sky_params = RgDrawFrameSkyParams{
         .sType              = RG_STRUCTURE_TYPE_DRAW_FRAME_SKY_PARAMS,
         .pNext              = &reflrefr_params,
         .skyType            = m_wassky ? RG_SKY_TYPE_RASTERIZED_GEOMETRY : RG_SKY_TYPE_COLOR,
         .skyColorDefault    = { 0, 0, 0 },
-        .skyColorMultiplier = cvar::rt_sky,
-        .skyColorSaturation = cvar::rt_sky_saturation,
+        .skyColorMultiplier = mapSkyIntensity,
+        .skyColorSaturation = mapSkySaturation,
         .skyViewerPosition  = { 0, 0, 0 },
     };
 

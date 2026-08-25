@@ -42,6 +42,34 @@
 #include "palentry.h"
 #include "bitmap.h"
 
+#include <cctype>
+#include <string_view>
+
+#if HAVE_RT
+#include "filesystem.h"
+#include "rt/rt_cvars.h"
+
+extern bool rt_isdoom2;
+
+static bool RT_UseDoomE1RealisticSky(const FLevelLocals* level)
+{
+	if (!bool{ cvar::rt_doom_e1_realistic_lights } || !level || rt_isdoom2)
+	{
+		return false;
+	}
+
+	const std::string_view mapName{ level->MapName.GetChars() };
+	if (mapName.size() != 4 || std::tolower(static_cast<unsigned char>(mapName[0])) != 'e' ||
+		mapName[1] != '1' || std::tolower(static_cast<unsigned char>(mapName[2])) != 'm' ||
+		mapName[3] < '1' || mapName[3] > '8')
+	{
+		return false;
+	}
+
+	return fileSystem.GetFileContainer(level->lumpnum) == fileSystem.GetIwadNum();
+}
+#endif
+
 //
 // sky mapping
 //
@@ -65,6 +93,20 @@ CUSTOM_CVAR (Int, r_skymode, 2, CVAR_ARCHIVE|CVAR_NOINITCALL)
 void InitSkyMap(FLevelLocals *Level)
 {
 	FGameTexture *skytex1, *skytex2;
+
+#if HAVE_RT
+	if (RT_UseDoomE1RealisticSky(Level))
+	{
+		const FTextureID realisticSky = TexMan.CheckForTexture(
+			"TUE1SKY", ETextureType::Wall, FTextureManager::TEXMAN_TryAny);
+		if (realisticSky.Exists())
+		{
+			Level->skytexture1 = realisticSky;
+			Level->skytexture2 = realisticSky;
+			Printf("RT realistic Episode 1 sky active on %s\n", Level->MapName.GetChars());
+		}
+	}
+#endif
 
 	// Do not allow the null texture which has no bitmap and will crash.
 	if (Level->skytexture1.isNull())
@@ -145,4 +187,3 @@ void R_UpdateSky (uint64_t mstime)
 		Level->hw_sky2pos = (float)(fmod((double(mstime) * Level->skyspeed2), 1024.) * (90. / 256.));
 	}
 }
-

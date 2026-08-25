@@ -1,0 +1,6 @@
+WallTexture TUE1SKY, 1774, 887
+{
+    XScale 6.9296875
+    YScale 6.9296875
+    Patch "textures/tuindoom/e1mars.png", 0, 0
+}

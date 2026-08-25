@@ -38,6 +38,8 @@ Source: "{#RepoRoot}\build\test-release\gzdoom-stable.exe"; DestDir: "{app}\Game
 Source: "{#RepoRoot}\compat\spider-death\zscript\tuindoom\spider_death.zs"; DestDir: "{app}\Game\rt\wad\zscript\tuindoom"; Flags: ignoreversion
 Source: "{#RepoRoot}\compat\spider-death\filter\doom.id.doom2\zscript.zc"; DestDir: "{app}\Game\rt\wad\filter\doom.id.doom2"; Flags: ignoreversion
 Source: "{#RepoRoot}\installer\game\tuindoom-bindings.cfg"; DestDir: "{app}\Game"; Flags: ignoreversion
+Source: "{#RepoRoot}\compat\realistic-lights\textures.lmp"; DestDir: "{app}\Game\rt\wad"; Flags: ignoreversion
+Source: "{#RepoRoot}\compat\realistic-lights\textures\tuindoom\*"; DestDir: "{app}\Game\rt\wad\textures\tuindoom"; Flags: ignoreversion
 Source: "{#RepoRoot}\build\test-release\rt\scenes\mainmenu\*"; DestDir: "{app}\Game\rt\scenes\mainmenu"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#RepoRoot}\build\test-release\rt\scenes\rtempty\*"; DestDir: "{app}\Game\rt\scenes\rtempty"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#RepoRoot}\installer\mods\nashgore.pk3"; DestDir: "{app}\Game\Mods"; Flags: ignoreversion

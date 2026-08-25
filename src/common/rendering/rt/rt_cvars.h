@@ -21,6 +21,7 @@ EXTERN_CVAR( Int, rt_shadowrays )
 EXTERN_CVAR( Bool, rt_withplayer )
 EXTERN_CVAR( Bool, rt_lerpmdlangle )
 EXTERN_CVAR( Bool, rt_decals )
+EXTERN_CVAR( Bool, rt_doom_e1_realistic_lights )
 
 extern bool rt_available_dlss2;
 extern bool rt_available_dlss3fg;
