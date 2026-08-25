@@ -1,7 +1,7 @@
 WallTexture TUE1SKY, 7096, 887
 {
-    // Four proportional planet-free panels fill Doom's sky cylinder. Mars is
-    // uploaded separately so the curved dome cannot deform its round outline.
+    // Four proportional panels fill Doom's sky cylinder with brown terrain
+    // and stars, without adding a separate planet object.
     XScale 6.9296875
     YScale 6.9296875
     Patch "textures/tuindoom/e1terrain360.png", 0, 0

@@ -15,7 +15,7 @@ You must supply a legally owned Doom IWAD. Commercial IWADs are not included.
 - Doom, Doom II, and PWAD support through per-WAD ray-tracing scene isolation.
 - Automatic Steam IWAD discovery with a selection dialog.
 - Warm outdoor sunlight with randomized direction and intensity.
-- Optional realistic Episode 1 lighting for stock E1M1 through E1M8, with a Mars panorama and six synchronized visible-sun positions.
+- Optional realistic Episode 1 lighting for stock E1M1 through E1M8, with a brown Martian landscape and six synchronized visible-sun positions.
 - Ray-traced flashlight with atmospheric dust.
 - Automatic luminous ceiling fixtures.
 - Bundled NashGore and an RT voxel compatibility package.
@@ -29,7 +29,7 @@ You must supply a legally owned Doom IWAD. Commercial IWADs are not included.
 - `F`: toggle the flashlight.
 
 The launcher can configure the sun-cycle key and the starting lighting intensity.
-When **Realistic E1 Lights** is enabled, `N` cycles six curated positions that keep the visible sun out of the Mars panorama while moving the directional light with it.
+When **Realistic E1 Lights** is enabled, `N` cycles six curated visible-sun positions while moving the directional light with it.
 
 ## Known limitations
 
