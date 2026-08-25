@@ -178,7 +178,7 @@ namespace cvar
     RT_CVAR( rt_doom_e1_sun_size,        8.0f,   "visible Episode 1 sun angular diameter in degrees")
     RT_CVAR( rt_doom_e1_mars_size,       58.0f,  "visible Episode 1 Mars angular diameter in degrees")
     RT_CVAR( rt_doom_e1_mars_altitude,   8.0f,   "visible Episode 1 Mars altitude in degrees")
-    RT_CVAR( rt_doom_e1_mars_azimuth,    45.0f,  "visible Episode 1 Mars azimuth in degrees")
+    RT_CVAR( rt_doom_e1_mars_azimuth,    225.0f, "visible Episode 1 Mars azimuth in degrees")
 
     RT_CVAR( rt_decals,                 true,   "draw decals. NOTE: impacts CPU performance, as gzdoom requires a doom-wall to be fullyparsed to submit its decals :(")
 
