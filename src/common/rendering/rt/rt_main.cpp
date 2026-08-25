@@ -357,6 +357,7 @@ enum
 constexpr uint64_t FlashlightLightId  = 0xFFFFFFF + 0;
 constexpr uint64_t SunLightId         = 0xFFFFFFF + 1;
 constexpr uint64_t MuzzleFlashLightId = 0xFFFFFFF + 2;
+constexpr uint64_t DoomE1MarsMeshId   = 0xE1A00001ull;
 constexpr uint64_t SectorLightId_Base = 0xFFFFFFF + 3;
 constexpr uint64_t CeilingLightId_Base = 0x1FFFFFFF;
 constexpr uint64_t CeilingLightId_Stride = 16;
@@ -688,6 +689,80 @@ void RT_UploadDoomE1SkyBillboard( const RgFloat3D& directionFromObject,
             RG_CHECK( rt.rgUploadLensFlare( &tile ) );
         }
     }
+}
+
+void RT_UploadDoomE1OpaqueBillboard( const RgFloat3D& directionFromObject,
+                                     float angularDiameter,
+                                     const char* textureName )
+{
+    constexpr float distance = 200.f;
+    constexpr float DegreesToRadians = 0.017453292519943295f;
+    const float halfSize =
+        std::tan( angularDiameter * DegreesToRadians * 0.5f ) * distance;
+
+    RgFloat3D center{};
+    for( int axis = 0; axis < 3; ++axis )
+    {
+        center.data[ axis ] = g_rt_mainCameraPosition.data[ axis ] -
+                              directionFromObject.data[ axis ] * distance;
+    }
+
+    const auto makeVertex = [ & ]( float rightScale, float upScale, float u, float v ) {
+        RgPrimitiveVertex vertex{};
+        for( int axis = 0; axis < 3; ++axis )
+        {
+            vertex.position[ axis ] = center.data[ axis ] +
+                                      g_rt_mainCameraRight.data[ axis ] * rightScale +
+                                      g_rt_mainCameraUp.data[ axis ] * upScale;
+        }
+        vertex.normalPacked = rt.rgUtilPackNormal( directionFromObject.data[ 0 ],
+                                                   directionFromObject.data[ 1 ],
+                                                   directionFromObject.data[ 2 ] );
+        vertex.texCoord[ 0 ] = u;
+        vertex.texCoord[ 1 ] = v;
+        vertex.color = rt.rgUtilPackColorByte4D( 255, 255, 255, 255 );
+        return vertex;
+    };
+
+    const RgPrimitiveVertex vertices[] = {
+        makeVertex( -halfSize, halfSize, 0.f, 0.f ),
+        makeVertex( halfSize, halfSize, 1.f, 0.f ),
+        makeVertex( halfSize, -halfSize, 1.f, 1.f ),
+        makeVertex( -halfSize, -halfSize, 0.f, 1.f ),
+    };
+    // Face the camera; the reverse winding keeps the quad front-facing.
+    constexpr uint32_t indices[] = { 0, 2, 1, 2, 0, 3 };
+
+    auto mesh = RgMeshInfo{
+        .sType                = RG_STRUCTURE_TYPE_MESH_INFO,
+        .pNext                = nullptr,
+        .flags                = 0,
+        .uniqueObjectID       = DoomE1MarsMeshId,
+        .pMeshName            = nullptr,
+        .transform            = RG_TRANSFORM_IDENTITY,
+        .isExportable         = false,
+        .animationTime        = 0.f,
+        .localLightsIntensity = 1.f,
+    };
+    auto primitive = RgMeshPrimitiveInfo{
+        .sType                = RG_STRUCTURE_TYPE_MESH_PRIMITIVE_INFO,
+        .pNext                = nullptr,
+        .flags                = RG_MESH_PRIMITIVE_ALPHA_TESTED |
+                                RG_MESH_PRIMITIVE_NO_SHADOW |
+                                RG_MESH_PRIMITIVE_NO_MOTION_VECTORS |
+                                RG_MESH_PRIMITIVE_FORCE_EXACT_NORMALS,
+        .primitiveIndexInMesh = 0,
+        .pVertices            = vertices,
+        .vertexCount          = static_cast< uint32_t >( std::size( vertices ) ),
+        .pIndices             = indices,
+        .indexCount           = static_cast< uint32_t >( std::size( indices ) ),
+        .pTextureName         = textureName,
+        .textureFrame         = 0,
+        .color                = rt.rgUtilPackColorByte4D( 255, 255, 255, 255 ),
+        .emissive             = 0.15f,
+        .classicLight         = 1.f,
+    };
+    RG_CHECK( rt.rgUploadMeshPrimitive( &mesh, &primitive ) );
 }
 } // namespace
 
@@ -5095,7 +5170,7 @@ void RTFrameBuffer::RT_DrawFrame()
         };
         const float angularDiameter = std::clamp(
             float{ cvar::rt_doom_e1_mars_size }, 10.f, 80.f );
-        RT_UploadDoomE1SkyBillboard(
+        RT_UploadDoomE1OpaqueBillboard(
             marsDirection, angularDiameter, "tuindoom/e1_mars" );
     }
 
