@@ -176,6 +176,9 @@ namespace cvar
     RT_CVAR( rt_sky_always,             true,   "always submit sky geometry (even if it's not visible in primary view)")
     RT_CVAR( rt_doom_e1_realistic_lights, false, "use the Mars panorama and synchronized visible sun on stock E1M1-E1M8")
     RT_CVAR( rt_doom_e1_sun_size,        8.0f,   "visible Episode 1 sun angular diameter in degrees")
+    RT_CVAR( rt_doom_e1_mars_size,       58.0f,  "visible Episode 1 Mars angular diameter in degrees")
+    RT_CVAR( rt_doom_e1_mars_altitude,   8.0f,   "visible Episode 1 Mars altitude in degrees")
+    RT_CVAR( rt_doom_e1_mars_azimuth,    45.0f,  "visible Episode 1 Mars azimuth in degrees")
 
     RT_CVAR( rt_decals,                 true,   "draw decals. NOTE: impacts CPU performance, as gzdoom requires a doom-wall to be fullyparsed to submit its decals :(")
 
@@ -543,19 +546,18 @@ DoomE1SunPreset RT_GetDoomE1SunPreset( int seed )
     return presets[ ( ( seed % presetCount ) + presetCount ) % presetCount ];
 }
 
-bool RT_EnsureDoomE1SunTexture()
+bool RT_EnsureDoomE1BillboardTexture( const char* sourceName,
+                                     const char* runtimeName,
+                                     const char* label,
+                                     bool& uploaded )
 {
-    constexpr const char* SourceName = "textures/tuindoom/sun.png";
-    constexpr const char* RuntimeName = "tuindoom/e1_sun";
-    static bool uploaded = false;
-
     if( uploaded )
     {
         return true;
     }
 
     const FTextureID id = TexMan.CheckForTexture(
-        SourceName, ETextureType::Any, FTextureManager::TEXMAN_TryAny );
+        sourceName, ETextureType::Any, FTextureManager::TEXMAN_TryAny );
     FGameTexture* gameTexture = id.Exists() ? TexMan.GetGameTexture( id, false ) : nullptr;
     FTexture* texture = gameTexture ? gameTexture->GetTexture() : nullptr;
     if( !texture )
@@ -578,7 +580,7 @@ bool RT_EnsureDoomE1SunTexture()
     auto info = RgOriginalTextureInfo{
         .sType        = RG_STRUCTURE_TYPE_ORIGINAL_TEXTURE_INFO,
         .pNext        = &details,
-        .pTextureName = RuntimeName,
+        .pTextureName = runtimeName,
         .pPixels      = buffer.mBuffer,
         .size         = { static_cast< uint32_t >( buffer.mWidth ),
                           static_cast< uint32_t >( buffer.mHeight ) },
@@ -593,9 +595,99 @@ bool RT_EnsureDoomE1SunTexture()
     }
 
     uploaded = true;
-    Printf( "RT Doom Episode 1 visible sun texture ready (%dx%d)\n",
-            buffer.mWidth, buffer.mHeight );
+    Printf( "RT Doom Episode 1 %s texture ready (%dx%d)\n",
+            label, buffer.mWidth, buffer.mHeight );
     return true;
+}
+
+bool RT_EnsureDoomE1SunTexture()
+{
+    static bool uploaded = false;
+    return RT_EnsureDoomE1BillboardTexture(
+        "textures/tuindoom/sun.png", "tuindoom/e1_sun", "sun", uploaded );
+}
+
+bool RT_EnsureDoomE1MarsTexture()
+{
+    static bool uploaded = false;
+    return RT_EnsureDoomE1BillboardTexture(
+        "textures/tuindoom/mars-horizon.png", "tuindoom/e1_mars", "Mars", uploaded );
+}
+
+void RT_UploadDoomE1SkyBillboard( const RgFloat3D& directionFromObject,
+                                  float angularDiameter,
+                                  const char* textureName )
+{
+    constexpr float distance = 200.f;
+    constexpr float DegreesToRadians = 0.017453292519943295f;
+    const float halfSize =
+        std::tan( angularDiameter * DegreesToRadians * 0.5f ) * distance;
+
+    RgFloat3D center{};
+    for( int axis = 0; axis < 3; ++axis )
+    {
+        center.data[ axis ] = g_rt_mainCameraPosition.data[ axis ] -
+                              directionFromObject.data[ axis ] * distance;
+    }
+
+    const auto makeVertex = [ & ]( float rightScale, float upScale, float u, float v ) {
+        RgPrimitiveVertex vertex{};
+        for( int axis = 0; axis < 3; ++axis )
+        {
+            vertex.position[ axis ] = center.data[ axis ] +
+                                      g_rt_mainCameraRight.data[ axis ] * rightScale +
+                                      g_rt_mainCameraUp.data[ axis ] * upScale;
+        }
+        vertex.texCoord[ 0 ] = u;
+        vertex.texCoord[ 1 ] = v;
+        vertex.color = rt.rgUtilPackColorByte4D( 255, 255, 255, 255 );
+        return vertex;
+    };
+
+    constexpr uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
+    constexpr int OcclusionTiles = 12;
+    for( int tileY = 0; tileY < OcclusionTiles; ++tileY )
+    {
+        for( int tileX = 0; tileX < OcclusionTiles; ++tileX )
+        {
+            const float u0 = float( tileX ) / float( OcclusionTiles );
+            const float u1 = float( tileX + 1 ) / float( OcclusionTiles );
+            const float v0 = float( tileY ) / float( OcclusionTiles );
+            const float v1 = float( tileY + 1 ) / float( OcclusionTiles );
+            const float right0 = std::lerp( -halfSize, halfSize, u0 );
+            const float right1 = std::lerp( -halfSize, halfSize, u1 );
+            const float up0 = std::lerp( halfSize, -halfSize, v0 );
+            const float up1 = std::lerp( halfSize, -halfSize, v1 );
+            const RgPrimitiveVertex vertices[] = {
+                makeVertex( right0, up0, u0, v0 ),
+                makeVertex( right1, up0, u1, v0 ),
+                makeVertex( right1, up1, u1, v1 ),
+                makeVertex( right0, up1, u0, v1 ),
+            };
+
+            RgFloat3D pointToCheck{};
+            const float tileRight = ( right0 + right1 ) * 0.5f;
+            const float tileUp = ( up0 + up1 ) * 0.5f;
+            for( int axis = 0; axis < 3; ++axis )
+            {
+                pointToCheck.data[ axis ] = center.data[ axis ] +
+                                            g_rt_mainCameraRight.data[ axis ] * tileRight +
+                                            g_rt_mainCameraUp.data[ axis ] * tileUp;
+            }
+
+            auto tile = RgLensFlareInfo{
+                .sType        = RG_STRUCTURE_TYPE_LENS_FLARE_INFO,
+                .pNext        = nullptr,
+                .vertexCount  = static_cast< uint32_t >( std::size( vertices ) ),
+                .pVertices    = vertices,
+                .indexCount   = static_cast< uint32_t >( std::size( indices ) ),
+                .pIndices     = indices,
+                .pTextureName = textureName,
+                .pointToCheck = pointToCheck,
+            };
+            RG_CHECK( rt.rgUploadLensFlare( &tile ) );
+        }
+    }
 }
 } // namespace
 
@@ -4982,82 +5074,29 @@ void RTFrameBuffer::RT_DrawFrame()
         {
             // Keep the visible body at the exact source direction of the light.
             // Tiled flare geometry lets walls and roofs hide only the covered part.
-            constexpr float distance = 200.f;
             const float angularDiameter = std::clamp(
                 float{ cvar::rt_doom_e1_sun_size }, 1.f, 20.f );
-            const float halfSize = std::tan( to_rad( angularDiameter ) * 0.5f ) * distance;
-
-            RgFloat3D center{};
-            for( int axis = 0; axis < 3; ++axis )
-            {
-                center.data[ axis ] =
-                    g_rt_mainCameraPosition.data[ axis ] - dir.data[ axis ] * distance;
-            }
-
-            const auto makeVertex = [ & ]( float rightScale,
-                                           float upScale,
-                                           float u,
-                                           float v ) {
-                RgPrimitiveVertex vertex{};
-                for( int axis = 0; axis < 3; ++axis )
-                {
-                    vertex.position[ axis ] =
-                        center.data[ axis ] +
-                        g_rt_mainCameraRight.data[ axis ] * rightScale +
-                        g_rt_mainCameraUp.data[ axis ] * upScale;
-                }
-                vertex.texCoord[ 0 ] = u;
-                vertex.texCoord[ 1 ] = v;
-                vertex.color = rt.rgUtilPackColorByte4D( 255, 255, 255, 255 );
-                return vertex;
-            };
-
-            constexpr uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
-            constexpr int OcclusionTiles = 12;
-            for( int tileY = 0; tileY < OcclusionTiles; ++tileY )
-            {
-                for( int tileX = 0; tileX < OcclusionTiles; ++tileX )
-                {
-                    const float u0 = float( tileX ) / float( OcclusionTiles );
-                    const float u1 = float( tileX + 1 ) / float( OcclusionTiles );
-                    const float v0 = float( tileY ) / float( OcclusionTiles );
-                    const float v1 = float( tileY + 1 ) / float( OcclusionTiles );
-                    const float right0 = std::lerp( -halfSize, halfSize, u0 );
-                    const float right1 = std::lerp( -halfSize, halfSize, u1 );
-                    const float up0 = std::lerp( halfSize, -halfSize, v0 );
-                    const float up1 = std::lerp( halfSize, -halfSize, v1 );
-                    const RgPrimitiveVertex vertices[] = {
-                        makeVertex( right0, up0, u0, v0 ),
-                        makeVertex( right1, up0, u1, v0 ),
-                        makeVertex( right1, up1, u1, v1 ),
-                        makeVertex( right0, up1, u0, v1 ),
-                    };
-
-                    RgFloat3D pointToCheck{};
-                    const float tileRight = ( right0 + right1 ) * 0.5f;
-                    const float tileUp = ( up0 + up1 ) * 0.5f;
-                    for( int axis = 0; axis < 3; ++axis )
-                    {
-                        pointToCheck.data[ axis ] =
-                            center.data[ axis ] +
-                            g_rt_mainCameraRight.data[ axis ] * tileRight +
-                            g_rt_mainCameraUp.data[ axis ] * tileUp;
-                    }
-
-                    auto sunTile = RgLensFlareInfo{
-                        .sType        = RG_STRUCTURE_TYPE_LENS_FLARE_INFO,
-                        .pNext        = nullptr,
-                        .vertexCount  = static_cast< uint32_t >( std::size( vertices ) ),
-                        .pVertices    = vertices,
-                        .indexCount   = static_cast< uint32_t >( std::size( indices ) ),
-                        .pIndices     = indices,
-                        .pTextureName = "tuindoom/e1_sun",
-                        .pointToCheck = pointToCheck,
-                    };
-                    RG_CHECK( rt.rgUploadLensFlare( &sunTile ) );
-                }
-            }
+            RT_UploadDoomE1SkyBillboard( dir, angularDiameter, "tuindoom/e1_sun" );
         }
+    }
+
+    if( useDoomE1RealisticLights && g_rt_mainCameraValid &&
+        RT_EnsureDoomE1MarsTexture() )
+    {
+        const float altitude = to_rad( std::clamp(
+            float{ cvar::rt_doom_e1_mars_altitude }, -30.f, 60.f ) );
+        const float azimuth = to_rad( std::fmod(
+            float{ cvar::rt_doom_e1_mars_azimuth } + 360.f, 360.f ) );
+        const float theta = std::clamp( pi() / 2 - altitude, 0.f, pi() );
+        const RgFloat3D marsDirection{
+            -sin( theta ) * cos( azimuth ),
+            -sin( theta ) * sin( azimuth ),
+            -cos( theta ),
+        };
+        const float angularDiameter = std::clamp(
+            float{ cvar::rt_doom_e1_mars_size }, 10.f, 80.f );
+        RT_UploadDoomE1SkyBillboard(
+            marsDirection, angularDiameter, "tuindoom/e1_mars" );
     }
 
     RT_UploadExportableSectorLights();
