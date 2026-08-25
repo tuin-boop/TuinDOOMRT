@@ -1,6 +1,8 @@
 WallTexture TUE1SKY, 1774, 887
 {
-    XScale 6.9296875
+    // Doom maps 1024 logical sky columns across the full 360-degree dome.
+    // Keep the source image's vertical display height at the classic 128 units.
+    XScale 1.732421875
     YScale 6.9296875
     Patch "textures/tuindoom/e1mars.png", 0, 0
 }

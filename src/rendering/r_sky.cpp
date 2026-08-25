@@ -43,6 +43,7 @@
 #include "bitmap.h"
 
 #include <cctype>
+#include <string>
 #include <string_view>
 
 #if HAVE_RT
@@ -103,7 +104,13 @@ void InitSkyMap(FLevelLocals *Level)
 		{
 			Level->skytexture1 = realisticSky;
 			Level->skytexture2 = realisticSky;
-			Printf("RT realistic Episode 1 sky active on %s\n", Level->MapName.GetChars());
+			static std::string lastReportedMap;
+			const std::string mapName = Level->MapName.GetChars();
+			if (mapName != lastReportedMap)
+			{
+				Printf("RT realistic Episode 1 sky active on %s\n", mapName.c_str());
+				lastReportedMap = mapName;
+			}
 		}
 	}
 #endif

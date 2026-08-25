@@ -5105,8 +5105,10 @@ void RTFrameBuffer::RT_DrawFrame()
     const float mapSkyIntensity = useDoomE1RealisticLights
                                       ? std::min( float{ cvar::rt_sky }, 72.f )
                                       : float{ cvar::rt_sky };
+    // This mode supplies authored full-color artwork. Do not let the launcher's
+    // optional colored-ambient setting turn the visible panorama grayscale.
     const float mapSkySaturation = useDoomE1RealisticLights
-                                       ? std::min( float{ cvar::rt_sky_saturation }, 0.65f )
+                                       ? 1.0f
                                        : float{ cvar::rt_sky_saturation };
 
     auto sky_params = RgDrawFrameSkyParams{
