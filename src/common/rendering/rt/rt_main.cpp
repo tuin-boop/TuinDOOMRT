@@ -563,19 +563,18 @@ struct DoomE1SunPreset
 {
     float altitude;
     float azimuth;
-    float intensity;
 };
 
 DoomE1SunPreset RT_GetDoomE1SunPreset( int seed )
 {
     // Keep the visible sun in clear upper-left and upper-right arcs.
     constexpr DoomE1SunPreset presets[] = {
-        { 54.f, 324.f, 105.f },
-        { 46.f, 306.f, 95.f },
-        { 60.f, 336.f, 112.f },
-        { 52.f, 54.f, 102.f },
-        { 44.f, 36.f, 92.f },
-        { 58.f, 66.f, 110.f },
+        { 54.f, 324.f },
+        { 46.f, 306.f },
+        { 60.f, 336.f },
+        { 52.f, 54.f },
+        { 44.f, 36.f },
+        { 58.f, 66.f },
     };
     constexpr int presetCount = int( std::size( presets ) );
     return presets[ ( ( seed % presetCount ) + presetCount ) % presetCount ];
@@ -585,7 +584,6 @@ struct DoomE2RiftLightPreset
 {
     float altitude;
     float azimuth;
-    float intensity;
 };
 
 DoomE2RiftLightPreset RT_GetDoomE2RiftLightPreset( int seed )
@@ -593,12 +591,12 @@ DoomE2RiftLightPreset RT_GetDoomE2RiftLightPreset( int seed )
     // These high, soft directions represent different bright regions of the
     // overhead Hell rift. There is deliberately no visible sun disc.
     constexpr DoomE2RiftLightPreset presets[] = {
-        { 68.f, 210.f, 88.f },
-        { 62.f, 250.f, 82.f },
-        { 72.f, 170.f, 94.f },
-        { 65.f, 120.f, 86.f },
-        { 58.f, 300.f, 80.f },
-        { 70.f, 35.f, 90.f },
+        { 68.f, 210.f },
+        { 62.f, 250.f },
+        { 72.f, 170.f },
+        { 65.f, 120.f },
+        { 58.f, 300.f },
+        { 70.f, 35.f },
     };
     constexpr int presetCount = int( std::size( presets ) );
     return presets[ ( ( seed % presetCount ) + presetCount ) % presetCount ];
@@ -608,19 +606,18 @@ struct DoomE3HorizonLightPreset
 {
     float altitude;
     float azimuth;
-    float intensity;
 };
 
 DoomE3HorizonLightPreset RT_GetDoomE3HorizonLightPreset( int seed )
 {
     // A low burning horizon supplies long shadows without drawing a sun body.
     constexpr DoomE3HorizonLightPreset presets[] = {
-        { 16.f, 205.f, 98.f },
-        { 12.f, 250.f, 92.f },
-        { 20.f, 165.f, 104.f },
-        { 14.f, 115.f, 96.f },
-        { 24.f, 305.f, 108.f },
-        { 18.f, 35.f, 100.f },
+        { 16.f, 205.f },
+        { 12.f, 250.f },
+        { 20.f, 165.f },
+        { 14.f, 115.f },
+        { 24.f, 305.f },
+        { 18.f, 35.f },
     };
     constexpr int presetCount = int( std::size( presets ) );
     return presets[ ( ( seed % presetCount ) + presetCount ) % presetCount ];
@@ -779,9 +776,8 @@ static void RT_ApplySunCycleAngle( int seed )
         cvar::rt_sun           = true;
         cvar::rt_sun_a         = preset.altitude;
         cvar::rt_sun_b         = preset.azimuth;
-        cvar::rt_sun_intensity = preset.intensity;
         Printf( "RT Episode 1 sun position %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
-                seed, preset.altitude, preset.azimuth, preset.intensity );
+                seed, preset.altitude, preset.azimuth, float{ cvar::rt_sun_intensity } );
         return;
     }
 
@@ -791,9 +787,8 @@ static void RT_ApplySunCycleAngle( int seed )
         cvar::rt_sun           = true;
         cvar::rt_sun_a         = preset.altitude;
         cvar::rt_sun_b         = preset.azimuth;
-        cvar::rt_sun_intensity = preset.intensity;
         Printf( "RT Episode 2 rift-light position %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
-                seed, preset.altitude, preset.azimuth, preset.intensity );
+                seed, preset.altitude, preset.azimuth, float{ cvar::rt_sun_intensity } );
         return;
     }
 
@@ -803,9 +798,8 @@ static void RT_ApplySunCycleAngle( int seed )
         cvar::rt_sun           = true;
         cvar::rt_sun_a         = preset.altitude;
         cvar::rt_sun_b         = preset.azimuth;
-        cvar::rt_sun_intensity = preset.intensity;
         Printf( "RT Episode 3 horizon-light position %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
-                seed, preset.altitude, preset.azimuth, preset.intensity );
+                seed, preset.altitude, preset.azimuth, float{ cvar::rt_sun_intensity } );
         return;
     }
 
@@ -5119,10 +5113,14 @@ void RTFrameBuffer::RT_DrawFrame()
     {
         const int seed = int{ cvar::rt_autosun_seed };
         const DoomE1SunPreset preset = RT_GetDoomE1SunPreset( seed );
+        const float selectedIntensity =
+            std::clamp( float{ cvar::rt_sun_intensity }, 0.f, 500.f );
         sun.active          = true;
         sun.altitude        = preset.altitude;
         sun.azimuth         = preset.azimuth;
-        sun.intensity       = preset.intensity;
+        sun.intensity       = selectedIntensity > 0.f
+                                  ? std::max( selectedIntensity, 150.f )
+                                  : 0.f;
         sun.angularDiameter = 0.8f;
         sun.color           = rt.rgUtilPackColorByte4D( 255, 229, 194, 255 );
 
@@ -5132,7 +5130,7 @@ void RTFrameBuffer::RT_DrawFrame()
         if( reportKey != lastReportedRealisticSun )
         {
             Printf( "RT Episode 1 realistic sun %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
-                    seed, preset.altitude, preset.azimuth, preset.intensity );
+                    seed, preset.altitude, preset.azimuth, sun.intensity );
             lastReportedRealisticSun = std::move( reportKey );
         }
     }
@@ -5144,7 +5142,7 @@ void RTFrameBuffer::RT_DrawFrame()
         sun.active          = true;
         sun.altitude        = preset.altitude;
         sun.azimuth         = preset.azimuth;
-        sun.intensity       = preset.intensity;
+        sun.intensity       = std::clamp( float{ cvar::rt_sun_intensity }, 0.f, 500.f );
         sun.angularDiameter = 4.0f;
         sun.color           = rt.rgUtilPackColorByte4D( 255, 70, 36, 255 );
 
@@ -5154,7 +5152,7 @@ void RTFrameBuffer::RT_DrawFrame()
         if( reportKey != lastReportedRealisticRift )
         {
             Printf( "RT Episode 2 realistic rift light %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
-                    seed, preset.altitude, preset.azimuth, preset.intensity );
+                    seed, preset.altitude, preset.azimuth, sun.intensity );
             lastReportedRealisticRift = std::move( reportKey );
         }
     }
@@ -5166,7 +5164,7 @@ void RTFrameBuffer::RT_DrawFrame()
         sun.active          = true;
         sun.altitude        = preset.altitude;
         sun.azimuth         = preset.azimuth;
-        sun.intensity       = preset.intensity;
+        sun.intensity       = std::clamp( float{ cvar::rt_sun_intensity }, 0.f, 500.f );
         sun.angularDiameter = 3.5f;
         sun.color           = rt.rgUtilPackColorByte4D( 255, 96, 40, 255 );
 
@@ -5176,7 +5174,7 @@ void RTFrameBuffer::RT_DrawFrame()
         if( reportKey != lastReportedRealisticHorizon )
         {
             Printf( "RT Episode 3 realistic horizon light %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
-                    seed, preset.altitude, preset.azimuth, preset.intensity );
+                    seed, preset.altitude, preset.azimuth, sun.intensity );
             lastReportedRealisticHorizon = std::move( reportKey );
         }
     }
