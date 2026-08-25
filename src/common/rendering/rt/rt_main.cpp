@@ -5261,7 +5261,7 @@ void RTFrameBuffer::RT_DrawFrame()
         sun.azimuth         = preset.azimuth;
         sun.intensity       = selectedIntensity > 0.f && useDoom2RealisticGroup < 3
                                   ? std::max( selectedIntensity,
-                                              useDoom2RealisticGroup == 1 ? 145.f : 120.f )
+                                              useDoom2RealisticGroup == 1 ? 220.f : 160.f )
                                   : selectedIntensity;
         sun.angularDiameter = useDoom2RealisticGroup == 3 ? 3.5f : 0.8f;
         sun.color = useDoom2RealisticGroup == 1
@@ -5325,6 +5325,10 @@ void RTFrameBuffer::RT_DrawFrame()
             const float angularDiameter = std::clamp(
                 float{ cvar::rt_doom_e1_sun_size }, 1.f, 20.f );
             RT_UploadDoomE1SkyBillboard( dir, angularDiameter, "tuindoom/e1_sun" );
+            // A slightly smaller second layer gives the body a white-hot core
+            // that remains visible after sky exposure and volumetric haze.
+            RT_UploadDoomE1SkyBillboard(
+                dir, angularDiameter * 0.82f, "tuindoom/e1_sun" );
         }
     }
 
@@ -5373,7 +5377,9 @@ void RTFrameBuffer::RT_DrawFrame()
     const float realisticSkyLimit =
         useDoomE3RealisticLights || useDoom2RealisticGroup == 3
             ? 58.f
-            : ( useDoomE2RealisticLights || useDoom2RealisticGroup == 2 ? 64.f : 72.f );
+            : ( useDoom2RealisticGroup == 1
+                    ? 48.f
+                    : ( useDoomE2RealisticLights || useDoom2RealisticGroup == 2 ? 64.f : 72.f ) );
     const float mapSkyIntensity = useDoomRealisticLights
                                       ? std::min( float{ cvar::rt_sky }, realisticSkyLimit )
                                       : float{ cvar::rt_sky };
