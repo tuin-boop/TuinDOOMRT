@@ -69,6 +69,24 @@ static bool RT_UseDoomE1RealisticSky(const FLevelLocals* level)
 
 	return fileSystem.GetFileContainer(level->lumpnum) == fileSystem.GetIwadNum();
 }
+
+static bool RT_UseDoomE2RealisticSky(const FLevelLocals* level)
+{
+	if (!bool{ cvar::rt_doom_e2_realistic_lights } || !level || rt_isdoom2)
+	{
+		return false;
+	}
+
+	const std::string_view mapName{ level->MapName.GetChars() };
+	if (mapName.size() != 4 || std::tolower(static_cast<unsigned char>(mapName[0])) != 'e' ||
+		mapName[1] != '2' || std::tolower(static_cast<unsigned char>(mapName[2])) != 'm' ||
+		mapName[3] < '1' || mapName[3] > '8')
+	{
+		return false;
+	}
+
+	return fileSystem.GetFileContainer(level->lumpnum) == fileSystem.GetIwadNum();
+}
 #endif
 
 //
@@ -109,6 +127,23 @@ void InitSkyMap(FLevelLocals *Level)
 			if (mapName != lastReportedMap)
 			{
 				Printf("RT realistic Episode 1 sky active on %s\n", mapName.c_str());
+				lastReportedMap = mapName;
+			}
+		}
+	}
+	else if (RT_UseDoomE2RealisticSky(Level))
+	{
+		const FTextureID realisticSky = TexMan.CheckForTexture(
+			"TUE2SKY", ETextureType::Wall, FTextureManager::TEXMAN_TryAny);
+		if (realisticSky.Exists())
+		{
+			Level->skytexture1 = realisticSky;
+			Level->skytexture2 = realisticSky;
+			static std::string lastReportedMap;
+			const std::string mapName = Level->MapName.GetChars();
+			if (mapName != lastReportedMap)
+			{
+				Printf("RT realistic Episode 2 sky active on %s\n", mapName.c_str());
 				lastReportedMap = mapName;
 			}
 		}

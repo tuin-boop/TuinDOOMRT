@@ -175,6 +175,7 @@ namespace cvar
     RT_CVAR( rt_sky_stretch,            1.2f,   "how much to stretch the sky sphere along the vertical axis")
     RT_CVAR( rt_sky_always,             true,   "always submit sky geometry (even if it's not visible in primary view)")
     RT_CVAR( rt_doom_e1_realistic_lights, false, "use the brown Martian landscape and synchronized visible sun on stock E1M1-E1M8")
+    RT_CVAR( rt_doom_e2_realistic_lights, false, "use the Deimos landscape and hidden red rift light on stock E2M1-E2M8")
     RT_CVAR( rt_doom_e1_sun_size,        8.0f,   "visible Episode 1 sun angular diameter in degrees")
 
     RT_CVAR( rt_decals,                 true,   "draw decals. NOTE: impacts CPU performance, as gzdoom requires a doom-wall to be fullyparsed to submit its decals :(")
@@ -518,6 +519,25 @@ bool RT_UseDoomE1RealisticLights( const FLevelLocals* level )
     return fileSystem.GetFileContainer( level->lumpnum ) == fileSystem.GetIwadNum();
 }
 
+bool RT_UseDoomE2RealisticLights( const FLevelLocals* level )
+{
+    if( !bool{ cvar::rt_doom_e2_realistic_lights } || !level || rt_isdoom2 )
+    {
+        return false;
+    }
+
+    const std::string_view mapName{ level->MapName.GetChars() };
+    if( mapName.size() != 4 || std::tolower( static_cast< unsigned char >( mapName[ 0 ] ) ) != 'e' ||
+        mapName[ 1 ] != '2' || std::tolower( static_cast< unsigned char >( mapName[ 2 ] ) ) != 'm' ||
+        mapName[ 3 ] < '1' || mapName[ 3 ] > '8' )
+    {
+        return false;
+    }
+
+    // Keep the authored panorama limited to the original Episode 2 maps.
+    return fileSystem.GetFileContainer( level->lumpnum ) == fileSystem.GetIwadNum();
+}
+
 namespace
 {
 struct DoomE1SunPreset
@@ -537,6 +557,29 @@ DoomE1SunPreset RT_GetDoomE1SunPreset( int seed )
         { 52.f, 54.f, 102.f },
         { 44.f, 36.f, 92.f },
         { 58.f, 66.f, 110.f },
+    };
+    constexpr int presetCount = int( std::size( presets ) );
+    return presets[ ( ( seed % presetCount ) + presetCount ) % presetCount ];
+}
+
+struct DoomE2RiftLightPreset
+{
+    float altitude;
+    float azimuth;
+    float intensity;
+};
+
+DoomE2RiftLightPreset RT_GetDoomE2RiftLightPreset( int seed )
+{
+    // These high, soft directions represent different bright regions of the
+    // overhead Hell rift. There is deliberately no visible sun disc.
+    constexpr DoomE2RiftLightPreset presets[] = {
+        { 68.f, 210.f, 88.f },
+        { 62.f, 250.f, 82.f },
+        { 72.f, 170.f, 94.f },
+        { 65.f, 120.f, 86.f },
+        { 58.f, 300.f, 80.f },
+        { 70.f, 35.f, 90.f },
     };
     constexpr int presetCount = int( std::size( presets ) );
     return presets[ ( ( seed % presetCount ) + presetCount ) % presetCount ];
@@ -697,6 +740,18 @@ static void RT_ApplySunCycleAngle( int seed )
         cvar::rt_sun_b         = preset.azimuth;
         cvar::rt_sun_intensity = preset.intensity;
         Printf( "RT Episode 1 sun position %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
+                seed, preset.altitude, preset.azimuth, preset.intensity );
+        return;
+    }
+
+    if( RT_UseDoomE2RealisticLights( primaryLevel ) )
+    {
+        const DoomE2RiftLightPreset preset = RT_GetDoomE2RiftLightPreset( seed );
+        cvar::rt_sun           = true;
+        cvar::rt_sun_a         = preset.altitude;
+        cvar::rt_sun_b         = preset.azimuth;
+        cvar::rt_sun_intensity = preset.intensity;
+        Printf( "RT Episode 2 rift-light position %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
                 seed, preset.altitude, preset.azimuth, preset.intensity );
         return;
     }
@@ -4923,6 +4978,9 @@ void RTFrameBuffer::RT_DrawFrame()
     } sun;
 
     const bool useDoomE1RealisticLights = RT_UseDoomE1RealisticLights( primaryLevel );
+    const bool useDoomE2RealisticLights = RT_UseDoomE2RealisticLights( primaryLevel );
+    const bool useDoomRealisticLights =
+        useDoomE1RealisticLights || useDoomE2RealisticLights;
 
     if( bool{ cvar::rt_sun } && float{ cvar::rt_sun_intensity } > 0 )
     {
@@ -5025,6 +5083,28 @@ void RTFrameBuffer::RT_DrawFrame()
         }
     }
 
+    if( useDoomE2RealisticLights )
+    {
+        const int seed = int{ cvar::rt_autosun_seed };
+        const DoomE2RiftLightPreset preset = RT_GetDoomE2RiftLightPreset( seed );
+        sun.active          = true;
+        sun.altitude        = preset.altitude;
+        sun.azimuth         = preset.azimuth;
+        sun.intensity       = preset.intensity;
+        sun.angularDiameter = 4.0f;
+        sun.color           = rt.rgUtilPackColorByte4D( 255, 70, 36, 255 );
+
+        static std::string lastReportedRealisticRift;
+        std::string reportKey = RT_GetMapName() ? RT_GetMapName() : "";
+        reportKey += ':' + std::to_string( seed );
+        if( reportKey != lastReportedRealisticRift )
+        {
+            Printf( "RT Episode 2 realistic rift light %d: altitude %.1f, azimuth %.1f, intensity %.0f\n",
+                    seed, preset.altitude, preset.azimuth, preset.intensity );
+            lastReportedRealisticRift = std::move( reportKey );
+        }
+    }
+
     if( sun.active )
     {
         float altitude = to_rad( sun.altitude );
@@ -5112,12 +5192,13 @@ void RTFrameBuffer::RT_DrawFrame()
         .portalNormalTwirl                     = false,
     };
 
-    const float mapSkyIntensity = useDoomE1RealisticLights
-                                      ? std::min( float{ cvar::rt_sky }, 72.f )
+    const float realisticSkyLimit = useDoomE2RealisticLights ? 64.f : 72.f;
+    const float mapSkyIntensity = useDoomRealisticLights
+                                      ? std::min( float{ cvar::rt_sky }, realisticSkyLimit )
                                       : float{ cvar::rt_sky };
     // This mode supplies authored full-color artwork. Do not let the launcher's
     // optional colored-ambient setting turn the visible panorama grayscale.
-    const float mapSkySaturation = useDoomE1RealisticLights
+    const float mapSkySaturation = useDoomRealisticLights
                                        ? 1.0f
                                        : float{ cvar::rt_sky_saturation };
 
