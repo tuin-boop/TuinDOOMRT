@@ -7,11 +7,11 @@ WallTexture TUE1SKY, 7096, 887
     Patch "textures/tuindoom/e1terrain360.png", 0, 0
 }
 
-WallTexture TUE2SKY, 1776, 887
+WallTexture TUE2SKY, 1774, 887
 {
     // One wide Deimos panorama fills the sky cylinder. The red rift is part of
     // the artwork; its matching directional light intentionally has no sun disc.
-    XScale 1.734375
-    YScale 1.734375
-    Patch "textures/tuindoom/e2deimos360.png", 0, 0
+    XScale 1.732421875
+    YScale 1.732421875
+    Patch "textures/tuindoom/e2deimos360-v2.png", 0, 0
 }
