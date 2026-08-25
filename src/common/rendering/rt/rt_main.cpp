@@ -681,7 +681,7 @@ bool RT_EnsureDoomE1SunTexture()
 {
     static bool uploaded = false;
     return RT_EnsureDoomE1BillboardTexture(
-        "textures/tuindoom/sun.png", "tuindoom/e1_sun", "sun", uploaded );
+        "textures/tuindoom/sun-bright.png", "tuindoom/e1_sun", "sun", uploaded );
 }
 
 void RT_UploadDoomE1SkyBillboard( const RgFloat3D& directionFromObject,
