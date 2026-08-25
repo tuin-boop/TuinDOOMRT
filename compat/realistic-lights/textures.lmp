@@ -18,3 +18,15 @@ WallTexture TUE2SKY, 7096, 887
     Patch "textures/tuindoom/e2deimos360-v2.png", 3548, 0
     Patch "textures/tuindoom/e2deimos360-v2.png", 5322, 0
 }
+
+WallTexture TUE3SKY, 7096, 887
+{
+    // Four proportional Inferno panels preserve the artwork in Doom's 1024x128
+    // virtual sky strip while keeping the burning landscape visible.
+    XScale 6.9296875
+    YScale 6.9296875
+    Patch "textures/tuindoom/e3inferno360.png", 0, 0
+    Patch "textures/tuindoom/e3inferno360.png", 1774, 0
+    Patch "textures/tuindoom/e3inferno360.png", 3548, 0
+    Patch "textures/tuindoom/e3inferno360.png", 5322, 0
+}

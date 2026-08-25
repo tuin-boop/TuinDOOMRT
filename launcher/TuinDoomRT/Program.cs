@@ -186,6 +186,7 @@ namespace TuinDoomRT
         public bool? ColoredSkyLighting { get; set; }
         public bool? RealisticE1Lights { get; set; }
         public bool? RealisticE2Lights { get; set; }
+        public bool? RealisticE3Lights { get; set; }
         public bool WeaponModCompatibility { get; set; }
         public bool CeilingLights { get; set; }
         public int CeilingLightIntensity { get; set; }
@@ -244,6 +245,7 @@ namespace TuinDoomRT
         private readonly CheckBox coloredSkyLighting = new CheckBox();
         private readonly CheckBox realisticE1Lights = new CheckBox();
         private readonly CheckBox realisticE2Lights = new CheckBox();
+        private readonly CheckBox realisticE3Lights = new CheckBox();
         private readonly CheckBox weaponModCompatibility = new CheckBox();
         private readonly TextBox extraArgs = new TextBox();
         private readonly TextBox commandPreview = new TextBox();
@@ -403,12 +405,24 @@ namespace TuinDoomRT
                 realisticE2Lights.BackColor = realisticE2Lights.Checked ? Lime : Panel;
                 realisticE2Lights.ForeColor = realisticE2Lights.Checked ? Color.Black : TextColor;
             };
+            realisticE3Lights.Appearance = Appearance.Button;
+            realisticE3Lights.Text = "REALISTIC E3 LIGHTS";
+            realisticE3Lights.TextAlign = ContentAlignment.MiddleCenter;
+            realisticE3Lights.SetBounds(510, 25, 230, 34);
+            realisticE3Lights.FlatStyle = FlatStyle.Flat;
+            realisticE3Lights.BackColor = Panel;
+            realisticE3Lights.ForeColor = TextColor;
+            realisticE3Lights.FlatAppearance.BorderColor = Orange;
+            realisticE3Lights.CheckedChanged += delegate {
+                realisticE3Lights.BackColor = realisticE3Lights.Checked ? Lime : Panel;
+                realisticE3Lights.ForeColor = realisticE3Lights.Checked ? Color.Black : TextColor;
+            };
             var presetInfo = new Label {
-                Text = "STOCK E1M1-E1M8 OR E2M1-E2M8     •     N CYCLES THE LIGHT DIRECTION",
+                Text = "STOCK EPISODES 1-3, MAPS 1-8     •     N CYCLES THE LIGHT DIRECTION",
                 ForeColor = Lime, Font = new Font("Consolas", 10F, FontStyle.Bold),
                 Location = new Point(18, 70), AutoSize = true
             };
-            lighting.Controls.AddRange(new Control[] { realisticE1Lights, realisticE2Lights, presetInfo });
+            lighting.Controls.AddRange(new Control[] { realisticE1Lights, realisticE2Lights, realisticE3Lights, presetInfo });
             main.Controls.Add(lighting); y += 118;
 
             var render = new GroupBox {
@@ -431,7 +445,7 @@ namespace TuinDoomRT
             main.Controls.AddRange(new Control[] { save, play });
             status.SetBounds(28, y + 51, 820, 26); status.ForeColor = Muted; status.Text = "READY"; main.Controls.Add(status);
 
-            foreach (Control c in new Control[] { profileName, enginePath, autoSun, sunIntensity, sunSeed, sunCycleKey, ceilingLights, ceilingIntensity, upscaler, vsync, hdr, coloredSkyLighting, realisticE1Lights, realisticE2Lights, weaponModCompatibility, cinematicRays, stockDoom2Scenes, extraArgs })
+            foreach (Control c in new Control[] { profileName, enginePath, autoSun, sunIntensity, sunSeed, sunCycleKey, ceilingLights, ceilingIntensity, upscaler, vsync, hdr, coloredSkyLighting, realisticE1Lights, realisticE2Lights, realisticE3Lights, weaponModCompatibility, cinematicRays, stockDoom2Scenes, extraArgs })
             {
                 if (c is TextBox) ((TextBox)c).TextChanged += delegate { UpdatePreview(); };
                 else if (c is CheckBox) ((CheckBox)c).CheckedChanged += delegate { UpdatePreview(); };
@@ -497,7 +511,7 @@ namespace TuinDoomRT
             autoSun.Checked = true; sunIntensity.Value = LockedSunIntensity; sunSeed.Value = 0;
             sunCycleKey.SelectedIndex = 0;
             ceilingLights.Checked = true; ceilingIntensity.Value = 75; upscaler.SelectedIndex = 0; cinematicRays.Checked = true; stockDoom2Scenes.Checked = false;
-            vsync.Checked = false; hdr.Checked = false; coloredSkyLighting.Checked = true; realisticE1Lights.Checked = false; realisticE2Lights.Checked = false; weaponModCompatibility.Checked = false; extraArgs.Text = "";
+            vsync.Checked = false; hdr.Checked = false; coloredSkyLighting.Checked = true; realisticE1Lights.Checked = false; realisticE2Lights.Checked = false; realisticE3Lights.Checked = false; weaponModCompatibility.Checked = false; extraArgs.Text = "";
             loading = false; FindEngine(); UpdatePreview();
         }
 
@@ -511,7 +525,7 @@ namespace TuinDoomRT
             sunCycleKey.SelectedItem = "N";
             ceilingLights.Checked = true; ceilingIntensity.Value = LockedCeilingIntensity;
             int up = upscaler.Items.IndexOf(p.Upscaler ?? "Native"); upscaler.SelectedIndex = up >= 0 ? up : 0;
-            vsync.Checked = p.VSync; hdr.Checked = p.HDR; coloredSkyLighting.Checked = p.ColoredSkyLighting ?? true; realisticE1Lights.Checked = p.RealisticE1Lights ?? false; realisticE2Lights.Checked = p.RealisticE2Lights ?? false; weaponModCompatibility.Checked = p.WeaponModCompatibility; cinematicRays.Checked = true; stockDoom2Scenes.Checked = false; extraArgs.Text = "";
+            vsync.Checked = p.VSync; hdr.Checked = p.HDR; coloredSkyLighting.Checked = p.ColoredSkyLighting ?? true; realisticE1Lights.Checked = p.RealisticE1Lights ?? false; realisticE2Lights.Checked = p.RealisticE2Lights ?? false; realisticE3Lights.Checked = p.RealisticE3Lights ?? false; weaponModCompatibility.Checked = p.WeaponModCompatibility; cinematicRays.Checked = true; stockDoom2Scenes.Checked = false; extraArgs.Text = "";
             FindEngine(); SelectIwadPath(p.IwadPath); loading = false; UpdatePreview();
         }
 
@@ -526,7 +540,7 @@ namespace TuinDoomRT
                 SunCycleKey = "N",
                 CeilingLights = true, CeilingLightIntensity = LockedCeilingIntensity,
                 Upscaler = upscaler.SelectedItem == null ? "Native" : upscaler.SelectedItem.ToString(),
-                VSync = vsync.Checked, HDR = hdr.Checked, ColoredSkyLighting = coloredSkyLighting.Checked, RealisticE1Lights = realisticE1Lights.Checked, RealisticE2Lights = realisticE2Lights.Checked, WeaponModCompatibility = weaponModCompatibility.Checked, CinematicRays = true, StockDoom2Scenes = false, ExtraArguments = ""
+                VSync = vsync.Checked, HDR = hdr.Checked, ColoredSkyLighting = coloredSkyLighting.Checked, RealisticE1Lights = realisticE1Lights.Checked, RealisticE2Lights = realisticE2Lights.Checked, RealisticE3Lights = realisticE3Lights.Checked, WeaponModCompatibility = weaponModCompatibility.Checked, CinematicRays = true, StockDoom2Scenes = false, ExtraArguments = ""
             };
         }
 
@@ -738,7 +752,7 @@ namespace TuinDoomRT
                 a.Add("-file");
                 a.Add(Q(file));
             }
-            a.AddRange(new[] { "+rt_classic", "0", "+rt_stockscenes", "0", "+rt_sky_saturation", coloredSkyLighting.Checked ? "1" : "0", "+rt_doom_e1_realistic_lights", realisticE1Lights.Checked ? "1" : "0", "+rt_doom_e2_realistic_lights", realisticE2Lights.Checked ? "1" : "0", "+rt_sun", "1", "+rt_sun_a", "15", "+rt_sun_b", "0", "+rt_sun_intensity", LockedSunIntensity.ToString(), "+rt_sun_color", Q("ff a0 60"), "+rt_autosun", "0", "+rt_autosun_seed", "0", "+rt_emis_mapboost", "200", "+rt_emis_maxscrcolor", "8", "+rt_ceilinglights", "1", "+rt_ceilinglight_intensity", LockedCeilingIntensity.ToString(), "+rt_vsync", vsync.Checked ? "1" : "0", "+rt_hdr", hdr.Checked ? "1" : "0", "+tuindoom_flashlight_dust", "1", "+rt_flsh", "0", "+rt_flsh_intensity", "200", "+rt_flsh_angle", "35", "+rt_volume_type", "1", "+rt_volume_scatter", "1", "+rt_volume_ambient", "0.03", "+rt_volume_lintensity", "1", "+rt_volume_lassymetry", "0.5", "+rt_bloom", "1", "+rt_bloom_scale", "1", "+exec", Q("tuindoom-bindings.cfg") });
+            a.AddRange(new[] { "+rt_classic", "0", "+rt_stockscenes", "0", "+rt_sky_saturation", coloredSkyLighting.Checked ? "1" : "0", "+rt_doom_e1_realistic_lights", realisticE1Lights.Checked ? "1" : "0", "+rt_doom_e2_realistic_lights", realisticE2Lights.Checked ? "1" : "0", "+rt_doom_e3_realistic_lights", realisticE3Lights.Checked ? "1" : "0", "+rt_sun", "1", "+rt_sun_a", "15", "+rt_sun_b", "0", "+rt_sun_intensity", LockedSunIntensity.ToString(), "+rt_sun_color", Q("ff a0 60"), "+rt_autosun", "0", "+rt_autosun_seed", "0", "+rt_emis_mapboost", "200", "+rt_emis_maxscrcolor", "8", "+rt_ceilinglights", "1", "+rt_ceilinglight_intensity", LockedCeilingIntensity.ToString(), "+rt_vsync", vsync.Checked ? "1" : "0", "+rt_hdr", hdr.Checked ? "1" : "0", "+tuindoom_flashlight_dust", "1", "+rt_flsh", "0", "+rt_flsh_intensity", "200", "+rt_flsh_angle", "35", "+rt_volume_type", "1", "+rt_volume_scatter", "1", "+rt_volume_ambient", "0.03", "+rt_volume_lintensity", "1", "+rt_volume_lassymetry", "0.5", "+rt_bloom", "1", "+rt_bloom_scale", "1", "+exec", Q("tuindoom-bindings.cfg") });
             string scale = upscaler.SelectedItem == null ? "Native" : upscaler.SelectedItem.ToString();
             int dlss = scale.StartsWith("DLSS") ? (scale.EndsWith("Quality") ? 1 : scale.EndsWith("Balanced") ? 2 : 3) : 0;
             int fsr = scale.StartsWith("FSR") ? (scale.EndsWith("Quality") ? 1 : scale.EndsWith("Balanced") ? 2 : 3) : 0;
