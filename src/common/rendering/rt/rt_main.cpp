@@ -748,6 +748,7 @@ void RT_UploadDoomE1OpaqueBillboard( const RgFloat3D& directionFromObject,
         .sType                = RG_STRUCTURE_TYPE_MESH_PRIMITIVE_INFO,
         .pNext                = nullptr,
         .flags                = RG_MESH_PRIMITIVE_ALPHA_TESTED |
+                                RG_MESH_PRIMITIVE_SKY |
                                 RG_MESH_PRIMITIVE_NO_SHADOW |
                                 RG_MESH_PRIMITIVE_NO_MOTION_VECTORS |
                                 RG_MESH_PRIMITIVE_FORCE_EXACT_NORMALS,
