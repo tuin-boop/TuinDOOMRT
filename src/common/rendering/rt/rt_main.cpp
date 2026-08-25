@@ -611,7 +611,7 @@ bool RT_EnsureDoomE1MarsTexture()
 {
     static bool uploaded = false;
     return RT_EnsureDoomE1BillboardTexture(
-        "textures/tuindoom/mars-horizon.png", "tuindoom/e1_mars", "Mars", uploaded );
+        "textures/tuindoom/mars-full.png", "tuindoom/e1_mars", "Mars", uploaded );
 }
 
 void RT_UploadDoomE1SkyBillboard( const RgFloat3D& directionFromObject,
