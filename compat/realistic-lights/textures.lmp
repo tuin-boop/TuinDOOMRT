@@ -1,8 +1,8 @@
-WallTexture TUE1SKY, 1774, 887
+WallTexture TUE1SKY, 7096, 887
 {
-    // Doom maps 1024 logical sky columns across the full 360-degree dome.
-    // Keep the source image's vertical display height at the classic 128 units.
-    XScale 1.732421875
+    // Four proportional panels fill Doom's 1024-column sky cylinder. Only one
+    // panel contains Mars; the other three continue the terrain and starfield.
+    XScale 6.9296875
     YScale 6.9296875
-    Patch "textures/tuindoom/e1mars.png", 0, 0
+    Patch "textures/tuindoom/e1mars360.png", 0, 0
 }
