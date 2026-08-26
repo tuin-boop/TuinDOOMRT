@@ -95,6 +95,35 @@ namespace TuinDoomRT
         }
     }
 
+    internal sealed class AccentGroupBox : GroupBox
+    {
+        private static readonly Color Card = Color.FromArgb(205, 8, 12, 13);
+        private static readonly Color Accent = Color.FromArgb(255, 105, 30);
+
+        public AccentGroupBox()
+        {
+            SetStyle(ControlStyles.SupportsTransparentBackColor |
+                     ControlStyles.OptimizedDoubleBuffer |
+                     ControlStyles.UserPaint, true);
+            BackColor = Color.Transparent;
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            var body = new Rectangle(0, 9, Width - 1, Height - 10);
+            using (var fill = new SolidBrush(Card)) e.Graphics.FillRectangle(fill, body);
+            using (var border = new Pen(Accent)) e.Graphics.DrawRectangle(border, body);
+
+            SizeF titleSize = e.Graphics.MeasureString(Text, Font);
+            var titleBack = new RectangleF(12, 0, titleSize.Width + 10, titleSize.Height + 1);
+            using (var fill = new SolidBrush(Color.FromArgb(235, 8, 12, 13)))
+                e.Graphics.FillRectangle(fill, titleBack);
+            using (var brush = new SolidBrush(Accent))
+                e.Graphics.DrawString(Text, Font, brush, 17, 0);
+        }
+    }
+
     internal sealed class WelcomeForm : Form
     {
         private static readonly string PreferenceFile = Path.Combine(
@@ -237,7 +266,7 @@ namespace TuinDoomRT
         public Profile()
         {
             Mods = new List<string>(); AutoSun = true; AutoSunIntensity = 100; SunCycleKey = "N"; CinematicRays = true;
-            CeilingLights = true; CeilingLightIntensity = 75; Upscaler = "Native"; ExtraArguments = "";
+            CeilingLights = true; CeilingLightIntensity = 75; Upscaler = "DLSS Quality"; ExtraArguments = "";
         }
         public override string ToString() { return Name; }
     }
@@ -299,8 +328,8 @@ namespace TuinDoomRT
         public LauncherForm()
         {
             Text = "TuinDoom RT";
-            ClientSize = new Size(1180, 700);
-            MinimumSize = new Size(960, 650);
+            ClientSize = new Size(1180, 820);
+            MinimumSize = new Size(1120, 760);
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Back;
             ForeColor = TextColor;
@@ -405,8 +434,8 @@ namespace TuinDoomRT
             cinematicRays.Checked = true;
             stockDoom2Scenes.Checked = false;
 
-            var lighting = new GroupBox {
-                Text = " RAY-TRACED LIGHTING ", ForeColor = Orange, BackColor = Color.Transparent,
+            var lighting = new AccentGroupBox {
+                Text = " RAY-TRACED LIGHTING ", ForeColor = Orange,
                 Location = new Point(28, y), Size = new Size(820, 151)
             };
             realisticE1Lights.Appearance = Appearance.Button;
@@ -465,13 +494,13 @@ namespace TuinDoomRT
             lighting.Controls.AddRange(new Control[] { realisticE1Lights, realisticE2Lights, realisticE3Lights, realisticDoom2Lights, presetInfo });
             main.Controls.Add(lighting); y += 165;
 
-            var render = new GroupBox {
-                Text = " UPSCALING ", ForeColor = Orange, BackColor = Color.Transparent,
+            var render = new AccentGroupBox {
+                Text = " UPSCALING ", ForeColor = Orange,
                 Location = new Point(28, y), Size = new Size(820, 76)
             };
             render.Controls.Add(MakeLabel("Mode", 18, 31));
             upscaler.SetBounds(70, 26, 250, 28); StyleCombo(upscaler);
-            upscaler.Items.AddRange(new object[] { "Native", "DLSS Quality", "DLSS Balanced", "DLSS Performance", "FSR Quality", "FSR Balanced", "FSR Performance" });
+            upscaler.Items.AddRange(new object[] { "DLSS Quality", "DLSS Balanced", "DLSS Performance", "FSR Quality", "FSR Balanced", "FSR Performance" });
             upscaler.SelectedIndex = 0;
             render.Controls.Add(upscaler); main.Controls.Add(render); y += 90;
 
@@ -480,7 +509,7 @@ namespace TuinDoomRT
             save.Click += delegate { SaveCurrentProfile(); };
             play.Click += delegate { LaunchGame(); };
             main.Controls.AddRange(new Control[] { save, play });
-            status.SetBounds(28, y + 51, 820, 26); status.ForeColor = Muted; status.Text = "READY"; main.Controls.Add(status);
+            status.SetBounds(28, y + 51, 820, 26); status.ForeColor = Muted; status.BackColor = Color.Transparent; status.Text = "READY"; main.Controls.Add(status);
 
             foreach (Control c in new Control[] { profileName, enginePath, autoSun, sunIntensity, sunSeed, sunCycleKey, ceilingLights, ceilingIntensity, upscaler, realisticE1Lights, realisticE2Lights, realisticE3Lights, realisticDoom2Lights, cinematicRays, stockDoom2Scenes, extraArgs })
             {
@@ -494,7 +523,7 @@ namespace TuinDoomRT
 
         private Label MakeLabel(string text, int x, int y)
         {
-            return new Label { Text = text, ForeColor = Muted, Location = new Point(x, y), AutoSize = true, Font = new Font("Segoe UI", 8F) };
+            return new Label { Text = text, ForeColor = Muted, BackColor = Color.FromArgb(8, 12, 13), Padding = new Padding(3, 1, 3, 1), Location = new Point(x, y), AutoSize = true, Font = new Font("Segoe UI", 8F, FontStyle.Bold) };
         }
 
         private void AddFieldLabel(Control parent, string text, ref int y)
@@ -506,12 +535,27 @@ namespace TuinDoomRT
         {
             var b = new Button { Text = text, Location = new Point(x, y), Size = new Size(w, h), FlatStyle = FlatStyle.Flat, BackColor = color, ForeColor = foreground ?? TextColor, Cursor = Cursors.Hand };
             b.FlatAppearance.BorderColor = color == Lime ? Lime : Orange;
+            b.FlatAppearance.BorderSize = 1;
+            b.FlatAppearance.MouseOverBackColor = color == Lime ? Color.FromArgb(177, 255, 82) : Color.FromArgb(37, 44, 45);
+            b.FlatAppearance.MouseDownBackColor = color == Lime ? Color.FromArgb(110, 210, 15) : Color.FromArgb(255, 105, 30);
             return b;
         }
 
         private void StyleText(TextBox box) { box.BackColor = Field; box.ForeColor = TextColor; box.BorderStyle = BorderStyle.FixedSingle; }
         private void StyleCombo(ComboBox box) { box.BackColor = Field; box.ForeColor = TextColor; box.DropDownStyle = ComboBoxStyle.DropDownList; box.FlatStyle = FlatStyle.Flat; }
-        private void StyleList(ListBox box) { box.BackColor = Field; box.ForeColor = TextColor; box.BorderStyle = BorderStyle.None; box.IntegralHeight = false; }
+        private void StyleList(ListBox box)
+        {
+            box.BackColor = Field; box.ForeColor = TextColor; box.BorderStyle = BorderStyle.None; box.IntegralHeight = false;
+            box.DrawMode = DrawMode.OwnerDrawFixed;
+            box.ItemHeight = 22;
+            box.DrawItem += delegate(object sender, DrawItemEventArgs e) {
+                if (e.Index < 0) return;
+                bool selected = (e.State & DrawItemState.Selected) != 0;
+                using (var fill = new SolidBrush(selected ? Lime : Field)) e.Graphics.FillRectangle(fill, e.Bounds);
+                using (var brush = new SolidBrush(selected ? Color.Black : TextColor))
+                    e.Graphics.DrawString(box.Items[e.Index].ToString(), box.Font, brush, e.Bounds.X + 7, e.Bounds.Y + 3);
+            };
+        }
 
         private void LoadData()
         {
@@ -561,7 +605,7 @@ namespace TuinDoomRT
             autoSun.Checked = true; sunIntensity.Value = LockedSunIntensity; sunSeed.Value = 0;
             sunCycleKey.SelectedItem = "N";
             ceilingLights.Checked = true; ceilingIntensity.Value = LockedCeilingIntensity;
-            int up = upscaler.Items.IndexOf(p.Upscaler ?? "Native"); upscaler.SelectedIndex = up >= 0 ? up : 0;
+            int up = upscaler.Items.IndexOf(p.Upscaler ?? "DLSS Quality"); upscaler.SelectedIndex = up >= 0 ? up : 0;
             realisticE1Lights.Checked = p.RealisticE1Lights ?? false; realisticE2Lights.Checked = p.RealisticE2Lights ?? false; realisticE3Lights.Checked = p.RealisticE3Lights ?? false; realisticDoom2Lights.Checked = p.RealisticDoom2Lights ?? false; cinematicRays.Checked = true; stockDoom2Scenes.Checked = false; extraArgs.Text = "";
             FindEngine(); SelectIwadPath(p.IwadPath); loading = false; UpdatePreview();
         }
@@ -576,7 +620,7 @@ namespace TuinDoomRT
                 AutoSunIntensity = LockedSunIntensity, AutoSunSeed = 0,
                 SunCycleKey = "N",
                 CeilingLights = true, CeilingLightIntensity = LockedCeilingIntensity,
-                Upscaler = upscaler.SelectedItem == null ? "Native" : upscaler.SelectedItem.ToString(),
+                Upscaler = upscaler.SelectedItem == null ? "DLSS Quality" : upscaler.SelectedItem.ToString(),
                 RealisticE1Lights = realisticE1Lights.Checked, RealisticE2Lights = realisticE2Lights.Checked, RealisticE3Lights = realisticE3Lights.Checked, RealisticDoom2Lights = realisticDoom2Lights.Checked, CinematicRays = true, StockDoom2Scenes = false, ExtraArguments = ""
             };
         }
@@ -786,7 +830,7 @@ namespace TuinDoomRT
                 a.Add(Q(file));
             }
             a.AddRange(new[] { "+rt_classic", "0", "+rt_stockscenes", "0", "+rt_sky_saturation", "1", "+rt_doom_e1_realistic_lights", realisticE1Lights.Checked ? "1" : "0", "+rt_doom_e2_realistic_lights", realisticE2Lights.Checked ? "1" : "0", "+rt_doom_e3_realistic_lights", realisticE3Lights.Checked ? "1" : "0", "+rt_doom2_realistic_lights", realisticDoom2Lights.Checked ? "1" : "0", "+rt_sun", "1", "+rt_sun_a", "15", "+rt_sun_b", "0", "+rt_sun_intensity", LockedSunIntensity.ToString(), "+rt_sun_color", Q("ff a0 60"), "+rt_autosun", "0", "+rt_autosun_seed", "0", "+rt_emis_mapboost", "200", "+rt_emis_maxscrcolor", "8", "+rt_ceilinglights", "1", "+rt_ceilinglight_intensity", LockedCeilingIntensity.ToString(), "+rt_vsync", "0", "+rt_hdr", "0", "+tuindoom_flashlight_dust", "1", "+rt_flsh", "0", "+rt_flsh_intensity", "200", "+rt_flsh_angle", "35", "+rt_volume_type", "1", "+rt_volume_scatter", "1", "+rt_volume_ambient", "0.03", "+rt_volume_lintensity", "1", "+rt_volume_lassymetry", "0.5", "+rt_bloom", "1", "+rt_bloom_scale", "1", "+exec", Q("tuindoom-bindings.cfg") });
-            string scale = upscaler.SelectedItem == null ? "Native" : upscaler.SelectedItem.ToString();
+            string scale = upscaler.SelectedItem == null ? "DLSS Quality" : upscaler.SelectedItem.ToString();
             int dlss = scale.StartsWith("DLSS") ? (scale.EndsWith("Quality") ? 1 : scale.EndsWith("Balanced") ? 2 : 3) : 0;
             int fsr = scale.StartsWith("FSR") ? (scale.EndsWith("Quality") ? 1 : scale.EndsWith("Balanced") ? 2 : 3) : 0;
             a.AddRange(new[] { "+rt_upscale_dlss", dlss.ToString(), "+rt_upscale_fsr2", fsr.ToString() });
