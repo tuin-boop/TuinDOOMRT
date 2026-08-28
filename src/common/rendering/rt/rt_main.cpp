@@ -596,14 +596,13 @@ struct DoomE1SunPreset
 
 DoomE1SunPreset RT_GetDoomE1SunPreset( int seed )
 {
-    // Keep the visible sun in clear upper-left and upper-right arcs.
+    // With the old Mars body removed, the visible sun can travel around the
+    // complete horizon instead of being restricted to two clear arcs.
     constexpr DoomE1SunPreset presets[] = {
-        { 54.f, 324.f },
-        { 46.f, 306.f },
-        { 60.f, 336.f },
-        { 52.f, 54.f },
-        { 44.f, 36.f },
-        { 58.f, 66.f },
+        { 52.f,   0.f }, { 44.f,  30.f }, { 58.f,  60.f },
+        { 40.f,  90.f }, { 54.f, 120.f }, { 46.f, 150.f },
+        { 60.f, 180.f }, { 42.f, 210.f }, { 56.f, 240.f },
+        { 45.f, 270.f }, { 58.f, 300.f }, { 48.f, 330.f },
     };
     constexpr int presetCount = int( std::size( presets ) );
     return presets[ ( ( seed % presetCount ) + presetCount ) % presetCount ];
@@ -661,12 +660,16 @@ struct Doom2ChapterLightPreset
 Doom2ChapterLightPreset RT_GetDoom2ChapterLightPreset( int group, int seed )
 {
     constexpr Doom2ChapterLightPreset wasteland[] = {
-        { 32.f, 304.f }, { 25.f, 330.f }, { 38.f, 286.f },
-        { 30.f, 56.f },  { 22.f, 34.f },  { 36.f, 74.f },
+        { 32.f,   0.f }, { 24.f,  30.f }, { 38.f,  60.f },
+        { 28.f,  90.f }, { 35.f, 120.f }, { 22.f, 150.f },
+        { 36.f, 180.f }, { 26.f, 210.f }, { 40.f, 240.f },
+        { 25.f, 270.f }, { 34.f, 300.f }, { 29.f, 330.f },
     };
     constexpr Doom2ChapterLightPreset city[] = {
-        { 42.f, 315.f }, { 35.f, 292.f }, { 48.f, 338.f },
-        { 40.f, 45.f },  { 32.f, 68.f },  { 46.f, 22.f },
+        { 42.f,   0.f }, { 34.f,  30.f }, { 48.f,  60.f },
+        { 38.f,  90.f }, { 45.f, 120.f }, { 32.f, 150.f },
+        { 46.f, 180.f }, { 36.f, 210.f }, { 50.f, 240.f },
+        { 35.f, 270.f }, { 44.f, 300.f }, { 39.f, 330.f },
     };
     constexpr Doom2ChapterLightPreset hell[] = {
         { 14.f, 205.f }, { 10.f, 250.f }, { 18.f, 165.f },
