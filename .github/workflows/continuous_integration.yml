@@ -115,7 +115,7 @@ jobs:
 
     - name: Upload Package
       if: runner.os == 'Windows'  # Remove to store packages of all targets
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         path: build/package
         name: ${{ matrix.config.name }} ${{ matrix.config.build_type }}
