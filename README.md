@@ -15,6 +15,9 @@ You must supply a legally owned Doom IWAD. Commercial IWADs are not included.
 - Doom, Doom II, and PWAD support through per-WAD ray-tracing scene isolation.
 - Automatic Steam IWAD discovery with a selection dialog.
 - Warm outdoor sunlight with randomized direction and intensity.
+- Optional realistic Episode 1 lighting for stock E1M1 through E1M8, with a brown Martian landscape and six synchronized visible-sun positions.
+- Optional realistic Episode 2 lighting for stock E2M1 through E2M8, with a cratered Deimos panorama and a hidden red directional light sourced from the Hell rift.
+- Optional realistic Episode 3 lighting for stock E3M1 through E3M8, with an Inferno wasteland and a hidden orange-red light sourced from the burning horizon.
 - Ray-traced flashlight with atmospheric dust.
 - Automatic luminous ceiling fixtures.
 - Bundled NashGore and an RT voxel compatibility package.
@@ -24,10 +27,13 @@ You must supply a legally owned Doom IWAD. Commercial IWADs are not included.
 
 ## Default controls
 
-- `N`: randomize the sun direction and its intensity.
+- `N`: cycle the outdoor or authored light direction and intensity.
 - `F`: toggle the flashlight.
 
 The launcher can configure the sun-cycle key and the starting lighting intensity.
+When **Realistic E1 Lights** is enabled, `N` cycles six curated visible-sun positions while moving the directional light with it.
+When **Realistic E2 Lights** is enabled, `N` cycles six high-angle red rift-light directions without drawing a visible sun.
+When **Realistic E3 Lights** is enabled, `N` cycles six low orange-red horizon-light directions without drawing a visible sun.
 
 ## Known limitations
 

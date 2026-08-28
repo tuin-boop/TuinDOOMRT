@@ -1,0 +1,65 @@
+WallTexture TUE1SKY, 7096, 887
+{
+    // Four proportional panels fill Doom's sky cylinder with brown terrain
+    // and stars, without adding a separate planet object.
+    XScale 6.9296875
+    YScale 6.9296875
+    Patch "textures/tuindoom/e1terrain360.png", 0, 0
+}
+
+WallTexture TUE2SKY, 7096, 887
+{
+    // Four proportional panels match Doom's 1024x128 virtual sky strip, keeping
+    // the Deimos ground visible without vertically squashing the artwork.
+    XScale 6.9296875
+    YScale 6.9296875
+    Patch "textures/tuindoom/e2deimos360-v2.png", 0, 0
+    Patch "textures/tuindoom/e2deimos360-v2.png", 1774, 0
+    Patch "textures/tuindoom/e2deimos360-v2.png", 3548, 0
+    Patch "textures/tuindoom/e2deimos360-v2.png", 5322, 0
+}
+
+WallTexture TUE3SKY, 7096, 887
+{
+    // Four proportional Inferno panels preserve the artwork in Doom's 1024x128
+    // virtual sky strip while keeping the burning landscape visible.
+    XScale 6.9296875
+    YScale 6.9296875
+    Patch "textures/tuindoom/e3inferno360.png", 0, 0
+    Patch "textures/tuindoom/e3inferno360.png", 1774, 0
+    Patch "textures/tuindoom/e3inferno360.png", 3548, 0
+    Patch "textures/tuindoom/e3inferno360.png", 5322, 0
+}
+
+WallTexture TUD21SKY, 7096, 887
+{
+    // Doom II MAP01-MAP11: storm-lit wasteland.
+    XScale 6.9296875
+    YScale 6.9296875
+    Patch "textures/tuindoom/doom2-wasteland360-v3.png", 0, 0
+    Patch "textures/tuindoom/doom2-wasteland360-v3.png", 1774, 0
+    Patch "textures/tuindoom/doom2-wasteland360-v3.png", 3548, 0
+    Patch "textures/tuindoom/doom2-wasteland360-v3.png", 5322, 0
+}
+
+WallTexture TUD22SKY, 7096, 887
+{
+    // Doom II MAP12-MAP20: burning city skyline.
+    XScale 6.9296875
+    YScale 6.9296875
+    Patch "textures/tuindoom/doom2-city360.png", 0, 0
+    Patch "textures/tuindoom/doom2-city360.png", 1774, 0
+    Patch "textures/tuindoom/doom2-city360.png", 3548, 0
+    Patch "textures/tuindoom/doom2-city360.png", 5322, 0
+}
+
+WallTexture TUD23SKY, 7096, 887
+{
+    // Doom II MAP21-MAP32: sunless infernal abyss.
+    XScale 6.9296875
+    YScale 6.9296875
+    Patch "textures/tuindoom/doom2-hell360.png", 0, 0
+    Patch "textures/tuindoom/doom2-hell360.png", 1774, 0
+    Patch "textures/tuindoom/doom2-hell360.png", 3548, 0
+    Patch "textures/tuindoom/doom2-hell360.png", 5322, 0
+}
