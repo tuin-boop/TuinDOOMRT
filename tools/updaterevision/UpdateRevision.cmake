@@ -74,7 +74,7 @@ function(main)
 	if(NOT Hash)
 		message("Failed to get commit info: ${Error}")
 		set(Hash "0")
-		set(Tag "TuinDOOM RT 1.4.7.7")
+		set(Tag "TuinDOOM RT 1.4.7.8")
 		set(Timestamp "")
 	endif()
 

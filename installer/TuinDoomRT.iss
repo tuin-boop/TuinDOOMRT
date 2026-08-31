@@ -1,5 +1,5 @@
 #define AppName "TuinDoom RT"
-#define AppVersion "1.4.7.7"
+#define AppVersion "1.4.7.8"
 #define RepoRoot SourcePath + "\.."
 
 [Setup]
