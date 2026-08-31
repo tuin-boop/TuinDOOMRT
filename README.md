@@ -6,7 +6,7 @@ TuinDOOM RT is a Windows launcher and customized GZDoom ray-tracing build design
 
 ## Download
 
-The ready-to-install Windows build is available from the [TuinDOOM RT 1.4.7.7 release](https://github.com/tuin-boop/TuinDOOMRT/releases/tag/v1.4.7.7).
+The ready-to-install Windows build is available from the [TuinDOOM RT 1.4.7.8 release](https://github.com/tuin-boop/TuinDOOMRT/releases/tag/v1.4.7.8).
 
 You must supply a legally owned Doom IWAD. Commercial IWADs are not included.
 
@@ -21,16 +21,16 @@ You must supply a legally owned Doom IWAD. Commercial IWADs are not included.
 - Ray-traced flashlight with atmospheric dust.
 - Automatic luminous ceiling fixtures.
 - Bundled NashGore and an RT voxel compatibility package.
-- Ordered external-mod loading and a weapon-mod compatibility mode.
+- Selectable ray-traced blood fluids and wall decals.
+- Ordered external-mod loading for WAD, PK3, and PK7 files.
 - Saved launcher profiles, startup information, and randomized intro artwork.
-- A stock Doom II RT-scene option for the original authored scenes.
+- Optional colored lighting from original and custom skies.
 
 ## Default controls
 
 - `N`: cycle the outdoor or authored light direction and intensity.
 - `F`: toggle the flashlight.
 
-The launcher can configure the sun-cycle key and the starting lighting intensity.
 When **Realistic E1 Lights** is enabled, `N` cycles six curated visible-sun positions while moving the directional light with it.
 When **Realistic E2 Lights** is enabled, `N` cycles six high-angle red rift-light directions without drawing a visible sun.
 When **Realistic E3 Lights** is enabled, `N` cycles six low orange-red horizon-light directions without drawing a visible sun.
