@@ -6,7 +6,7 @@ TuinDOOM RT is a Windows launcher and customized GZDoom ray-tracing build design
 
 ## Download
 
-The ready-to-install Windows build is available from the [TuinDOOM RT 1.4.7.9 release](https://github.com/tuin-boop/TuinDOOMRT/releases/tag/v1.4.7.9).
+The ready-to-install Windows build is available from the [TuinDOOM RT 1.4.7.10 release](https://github.com/tuin-boop/TuinDOOMRT/releases/tag/v1.4.7.10).
 
 You must supply a legally owned Doom IWAD. Commercial IWADs are not included.
 
