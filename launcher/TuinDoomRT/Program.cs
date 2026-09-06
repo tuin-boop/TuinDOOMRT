@@ -141,7 +141,7 @@ namespace TuinDoomRT
 
         public WelcomeForm()
         {
-            Text = "Welcome to TuinDOOM RT 1.4.7.8";
+            Text = "Welcome to TuinDOOM RT 1.4.7.9";
             ClientSize = new Size(960, 720);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -153,7 +153,7 @@ namespace TuinDoomRT
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
 
             var title = new Label {
-                Text = "TUINDOOM RT 1.4.7.8", ForeColor = Color.White,
+                Text = "TUINDOOM RT 1.4.7.9", ForeColor = Color.White,
                 Font = new Font("Segoe UI", 23F, FontStyle.Bold), AutoSize = true, Location = new Point(28, 18)
             };
             var subtitle = new Label {
@@ -173,7 +173,7 @@ namespace TuinDoomRT
             }
             var limitations = new Label {
                 Text = "STABLE BUILD NOTES\r\n" +
-                       "• Requires a legal DOOM or DOOM II IWAD; no commercial game data is included.\r\n" +
+                       "• Requires a legal DOOM, DOOM II, TNT, or Plutonia IWAD; no commercial game data is included.\r\n" +
                        "• General WADs use automatic RT lighting, so results naturally vary by map.\r\n" +
                        "• Experimental liquid shaders and newer raw voxel packs are disabled for stability.\r\n" +
                        "• N cycles the outdoor or authored light direction. F toggles the flashlight.",
@@ -401,7 +401,7 @@ namespace TuinDoomRT
             profileName.SetBounds(28, y, 820, 28); StyleText(profileName); y += 37;
             main.Controls.Add(profileName);
 
-            AddFieldLabel(main, "MAIN GAME IWAD  (SELECT DOOM OR DOOM II)", ref y);
+            AddFieldLabel(main, "MAIN GAME IWAD  (DOOM, DOOM II, TNT, OR PLUTONIA)", ref y);
             iwadList.SetBounds(28, y, 600, 30); StyleCombo(iwadList);
             var scan = MakeButton("SCAN", 638, y, 100, 30, Panel);
             var browseIwad = MakeButton("BROWSE", 748, y, 100, 30, Panel);
@@ -737,12 +737,45 @@ namespace TuinDoomRT
                 string[] candidates = {
                     Path.Combine(common, "Ultimate Doom", "rerelease", "doom.wad"),
                     Path.Combine(common, "Ultimate Doom", "rerelease", "DOOM2.WAD"),
+                    Path.Combine(common, "Ultimate Doom", "rerelease", "TNT.WAD"),
+                    Path.Combine(common, "Ultimate Doom", "rerelease", "PLUTONIA.WAD"),
                     Path.Combine(common, "Ultimate Doom", "base", "DOOM.WAD"),
                     Path.Combine(common, "Ultimate Doom", "base", "doom2", "DOOM2.WAD"),
+                    Path.Combine(common, "Ultimate Doom", "base", "tnt", "TNT.WAD"),
+                    Path.Combine(common, "Ultimate Doom", "base", "plutonia", "PLUTONIA.WAD"),
                     Path.Combine(common, "DOOM 2", "base", "DOOM2.WAD"),
-                    Path.Combine(common, "DOOM 2", "rerelease", "DOOM2.WAD")
+                    Path.Combine(common, "DOOM 2", "rerelease", "DOOM2.WAD"),
+                    Path.Combine(common, "DOOM 2", "rerelease", "TNT.WAD"),
+                    Path.Combine(common, "DOOM 2", "rerelease", "PLUTONIA.WAD"),
+                    Path.Combine(common, "Final Doom", "base", "TNT.WAD"),
+                    Path.Combine(common, "Final Doom", "base", "PLUTONIA.WAD"),
+                    Path.Combine(common, "Final Doom", "base", "TNT", "TNT.WAD"),
+                    Path.Combine(common, "Final Doom", "base", "Plutonia", "PLUTONIA.WAD")
                 };
                 foreach (string c in candidates) if (File.Exists(c)) paths.Add(c);
+            }
+            string[] gogRoots = {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "GOG Galaxy", "Games"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "GOG Galaxy", "Games"),
+                @"C:\GOG Games"
+            };
+            string[] gogGames = { "Final Doom", "DOOM + DOOM II", "DOOM II + Master Levels", "DOOM 2 + Master Levels" };
+            string[] iwadNames = { "DOOM.WAD", "DOOM2.WAD", "TNT.WAD", "PLUTONIA.WAD" };
+            foreach (string root in gogRoots.Where(Directory.Exists))
+            {
+                foreach (string game in gogGames)
+                {
+                    string gameRoot = Path.Combine(root, game);
+                    foreach (string name in iwadNames)
+                    {
+                        string[] candidates = {
+                            Path.Combine(gameRoot, name),
+                            Path.Combine(gameRoot, "base", name),
+                            Path.Combine(gameRoot, "rerelease", name)
+                        };
+                        foreach (string c in candidates) if (File.Exists(c)) paths.Add(c);
+                    }
+                }
             }
             var options = paths.Select(p => new IwadOption { Path = p, Game = DetectGame(p) })
                 .Where(x => x.Game != null)
@@ -784,7 +817,14 @@ namespace TuinDoomRT
                         br.ReadInt32(); br.ReadInt32(); string name = Encoding.ASCII.GetString(br.ReadBytes(8)).TrimEnd('\0').ToUpperInvariant();
                         if (name == "E1M1") e1m1 = true; if (name == "MAP01") map01 = true;
                     }
-                    if (e1m1) return "DOOM (1993)"; if (map01) return "DOOM II";
+                    if (e1m1) return "DOOM (1993)";
+                    if (map01)
+                    {
+                        string fileName = Path.GetFileName(path);
+                        if (fileName.Equals("TNT.WAD", StringComparison.OrdinalIgnoreCase)) return "FINAL DOOM: TNT";
+                        if (fileName.Equals("PLUTONIA.WAD", StringComparison.OrdinalIgnoreCase)) return "FINAL DOOM: PLUTONIA";
+                        return "DOOM II";
+                    }
                 }
             }
             catch { }
@@ -858,7 +898,12 @@ namespace TuinDoomRT
             string engine = ResolveEnginePath();
             string gameDir = Path.GetDirectoryName(engine) ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Game");
             string privateConfig = Path.Combine(gameDir, "tuindoom-rt.ini");
-            var a = new List<string> { "-config", Q(privateConfig), iwad.Game.StartsWith("DOOM II") ? "-rtdoom2" : "-rtdoom1", "-iwad", Q(iwad.Path) };
+            bool finalDoom = iwad.Game.StartsWith("FINAL DOOM:");
+            string launchMode = iwad.Game == "FINAL DOOM: TNT" ? "-rttnt"
+                : iwad.Game == "FINAL DOOM: PLUTONIA" ? "-rtplutonia"
+                : iwad.Game.StartsWith("DOOM II") ? "-rtdoom2"
+                : "-rtdoom1";
+            var a = new List<string> { "-config", Q(privateConfig), launchMode, "-iwad", Q(iwad.Path) };
             // User-selected map/gameplay mods load before the core RT package.
             // Raw KVX/VOX packages are deliberately
             // excluded: the RT renderer requires converted GLTF models and otherwise
@@ -872,7 +917,7 @@ namespace TuinDoomRT
                 a.Add("-file");
                 a.Add(Q(file));
             }
-            a.AddRange(new[] { "+rt_classic", "0", "+rt_stockscenes", "0", "+rt_sky_saturation", coloredSkyLighting.Checked ? "1" : "0", "+rt_doom_e1_realistic_lights", realisticE1Lights.Checked ? "1" : "0", "+rt_doom_e2_realistic_lights", realisticE2Lights.Checked ? "1" : "0", "+rt_doom_e3_realistic_lights", realisticE3Lights.Checked ? "1" : "0", "+rt_doom2_realistic_lights", realisticDoom2Lights.Checked ? "1" : "0", "+rt_sun", "1", "+rt_sun_a", "15", "+rt_sun_b", "0", "+rt_sun_intensity", LockedSunIntensity.ToString(), "+rt_sun_color", Q("ff a0 60"), "+rt_autosun", "0", "+rt_autosun_seed", "0", "+rt_emis_mapboost", "200", "+rt_emis_maxscrcolor", "8", "+rt_ceilinglights", "1", "+rt_ceilinglight_intensity", LockedCeilingIntensity.ToString(), "+rt_vsync", "0", "+rt_hdr", "0", "+tuindoom_flashlight_dust", "1", "+rt_flsh", "0", "+rt_flsh_intensity", "200", "+rt_flsh_angle", "35", "+rt_volume_type", "1", "+rt_volume_scatter", "1", "+rt_volume_ambient", "0.03", "+rt_volume_lintensity", "1", "+rt_volume_lassymetry", "0.5", "+rt_bloom", "1", "+rt_bloom_scale", "1", "+exec", Q("tuindoom-bindings.cfg") });
+            a.AddRange(new[] { "+rt_classic", "0", "+rt_stockscenes", "0", "+rt_sky_saturation", coloredSkyLighting.Checked ? "1" : "0", "+rt_doom_e1_realistic_lights", realisticE1Lights.Checked ? "1" : "0", "+rt_doom_e2_realistic_lights", realisticE2Lights.Checked ? "1" : "0", "+rt_doom_e3_realistic_lights", realisticE3Lights.Checked ? "1" : "0", "+rt_doom2_realistic_lights", !finalDoom && realisticDoom2Lights.Checked ? "1" : "0", "+rt_sun", "1", "+rt_sun_a", "15", "+rt_sun_b", "0", "+rt_sun_intensity", LockedSunIntensity.ToString(), "+rt_sun_color", Q("ff a0 60"), "+rt_autosun", "0", "+rt_autosun_seed", "0", "+rt_emis_mapboost", "200", "+rt_emis_maxscrcolor", "8", "+rt_ceilinglights", "1", "+rt_ceilinglight_intensity", LockedCeilingIntensity.ToString(), "+rt_vsync", "0", "+rt_hdr", "0", "+tuindoom_flashlight_dust", "1", "+rt_flsh", "0", "+rt_flsh_intensity", "200", "+rt_flsh_angle", "35", "+rt_volume_type", "1", "+rt_volume_scatter", "1", "+rt_volume_ambient", "0.03", "+rt_volume_lintensity", "1", "+rt_volume_lassymetry", "0.5", "+rt_bloom", "1", "+rt_bloom_scale", "1", "+exec", Q("tuindoom-bindings.cfg") });
             string scale = upscaler.SelectedItem == null ? "DLSS Quality" : upscaler.SelectedItem.ToString();
             int dlss = scale.StartsWith("DLSS") ? (scale.EndsWith("Quality") ? 1 : scale.EndsWith("Balanced") ? 2 : 3) : 0;
             int fsr = scale.StartsWith("FSR") ? (scale.EndsWith("Quality") ? 1 : scale.EndsWith("Balanced") ? 2 : 3) : 0;
@@ -902,7 +947,7 @@ namespace TuinDoomRT
             enginePath.Text = exe;
             var iwad = iwadList.SelectedItem as IwadOption;
             if (!File.Exists(exe)) { MessageBox.Show("Select the installed ray-traced GZDoom executable.", "Engine not found", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-            if (iwad == null || !File.Exists(iwad.Path)) { MessageBox.Show("Select a valid Doom or Doom II IWAD.", "IWAD not found", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (iwad == null || !File.Exists(iwad.Path)) { MessageBox.Show("Select a valid Doom, Doom II, TNT, or Plutonia IWAD.", "IWAD not found", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             List<string> missing = MissingBundledMods();
             if (missing.Count > 0) { MessageBox.Show("The bundled visual mods are missing:\n\n" + string.Join("\n", missing) + "\n\nRepair or reinstall TuinDoom RT.", "Bundled mods not found", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             try
