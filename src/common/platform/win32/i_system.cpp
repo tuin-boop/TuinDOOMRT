@@ -501,6 +501,8 @@ enum class ChooseResult
 	Fallback,
 	UltimateDoom,
 	Doom2,
+	Tnt,
+	Plutonia,
 };
 
 static int wnd_size_x = 0;
@@ -1919,6 +1921,8 @@ int I_PickIWad(WadStuff *wads, int numwads, bool showwin, int defaultiwad, int& 
 #if HAVE_RT
     auto ultimateDoom = std::optional< int >{};
     auto doom2 = std::optional< int >{};
+    auto tnt = std::optional< int >{};
+    auto plutonia = std::optional< int >{};
     for (int i = 0; i < numwads; i++)
     {
         if (strnicmp(wads[i].Autoname.GetChars(), "doom.id.doom1.", 14) == 0)
@@ -1928,6 +1932,14 @@ int I_PickIWad(WadStuff *wads, int numwads, bool showwin, int defaultiwad, int& 
         else if (wads[i].Autoname == FString{ "doom.id.doom2.commercial" })
         {
             doom2 = i;
+        }
+        else if (strnicmp(wads[i].Autoname.GetChars(), "doom.id.doom2.tnt", 17) == 0)
+        {
+            tnt = i;
+        }
+        else if (strnicmp(wads[i].Autoname.GetChars(), "doom.id.doom2.plutonia", 22) == 0)
+        {
+            plutonia = i;
         }
     }
 
@@ -1939,6 +1951,14 @@ int I_PickIWad(WadStuff *wads, int numwads, bool showwin, int defaultiwad, int& 
 	else if (Args->CheckParm("-rtdoom2") > 0)
 	{
 		res = ChooseResult::Doom2;
+	}
+	else if (Args->CheckParm("-rttnt") > 0)
+	{
+		res = ChooseResult::Tnt;
+	}
+	else if (Args->CheckParm("-rtplutonia") > 0)
+	{
+		res = ChooseResult::Plutonia;
 	}
 	else if (Args->CheckParm("-rtnolauncher") == 0)
 	{
@@ -1964,6 +1984,8 @@ int I_PickIWad(WadStuff *wads, int numwads, bool showwin, int defaultiwad, int& 
 			assert( ultimateDoom );
 			return ultimateDoom ? *ultimateDoom : -1;
 		case ChooseResult::Doom2: assert( doom2 ); return doom2 ? *doom2 : -1;
+		case ChooseResult::Tnt: assert( tnt ); return tnt ? *tnt : -1;
+		case ChooseResult::Plutonia: assert( plutonia ); return plutonia ? *plutonia : -1;
 		case ChooseResult::Close: return -1;
 		case ChooseResult::Fallback: break;
 		default: assert( 0 ); break;

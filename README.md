@@ -6,14 +6,14 @@ TuinDOOM RT is a Windows launcher and customized GZDoom ray-tracing build design
 
 ## Download
 
-The ready-to-install Windows build is available from the [TuinDOOM RT 1.4.7.8 release](https://github.com/tuin-boop/TuinDOOMRT/releases/tag/v1.4.7.8).
+The ready-to-install Windows build is available from the [TuinDOOM RT 1.4.7.9 release](https://github.com/tuin-boop/TuinDOOMRT/releases/tag/v1.4.7.9).
 
 You must supply a legally owned Doom IWAD. Commercial IWADs are not included.
 
 ## Highlights
 
-- Doom, Doom II, and PWAD support through per-WAD ray-tracing scene isolation.
-- Automatic Steam IWAD discovery with a selection dialog.
+- Doom, Doom II, Final Doom, and PWAD support through per-WAD ray-tracing scene isolation.
+- Automatic Steam and common GOG IWAD discovery, including TNT and Plutonia.
 - Warm outdoor sunlight with randomized direction and intensity.
 - Optional realistic Episode 1 lighting for stock E1M1 through E1M8, with a brown Martian landscape and six synchronized visible-sun positions.
 - Optional realistic Episode 2 lighting for stock E2M1 through E2M8, with a cratered Deimos panorama and a hidden red directional light sourced from the Hell rift.

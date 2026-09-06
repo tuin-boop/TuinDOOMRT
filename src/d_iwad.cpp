@@ -888,6 +888,14 @@ int FIWadManager::IdentifyVersion (std::vector<std::string>&wadfiles, const char
 
 			rt_isdoom2 = true;
 		}
+		else if( strnicmp( autoname.GetChars(), "doom.id.doom2.tnt", 17 ) == 0 ||
+		         strnicmp( autoname.GetChars(), "doom.id.doom2.plutonia", 22 ) == 0 )
+		{
+			// Final Doom uses the Doom II renderer path. Its maps use automatic
+			// RT lighting, so the missing hand-authored Doom II scene data is not
+			// an error and must not produce an unsupported-IWAD warning.
+			rt_isdoom2 = true;
+		}
 		else if( strnicmp( autoname.GetChars(), "doom.id.doom1.", 14 ) == 0 )
 		{
 			// Doom 1 uses generic per-WAD scene data and automatic outdoor
