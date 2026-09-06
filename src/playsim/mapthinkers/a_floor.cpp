@@ -799,6 +799,7 @@ auto RT_GetStairsSectors( int tag, line_t* line ) -> std::vector< int >
 	std::vector< int > result_sectornums{};
 
 	FLevelLocals* lvl = primaryLevel;
+	std::vector< bool > visitedSectors( lvl->sectors.Size(), false );
 
 	int        secnum = -1;
 	int        newsecnum = -1;
@@ -813,8 +814,13 @@ auto RT_GetStairsSectors( int tag, line_t* line ) -> std::vector< int >
 	while ((secnum = itr.NextCompat(compatible, secnum)) >= 0)
 	{
 		sec = &lvl->sectors[ secnum ];
+		if( visitedSectors[ secnum ] )
+		{
+			continue;
+		}
 
 		result_sectornums.push_back( sec->Index() );
+		visitedSectors[ secnum ] = true;
 
 		#if 0
 		if (sec->PlaneMoving(sector_t::floor) || sec->stairlock)
@@ -924,6 +930,16 @@ auto RT_GetStairsSectors( int tag, line_t* line ) -> std::vector< int >
 
 			if (ok)
 			{
+				// Some valid maps contain circular staircase-sector chains (notably
+				// TNT MAP27). The gameplay stair builder marks visited sectors, but
+				// this read-only RT copy must do the same or it grows the result
+				// vector forever until the process exhausts memory.
+				if( newsecnum < 0 || newsecnum >= int( visitedSectors.size() ) ||
+					visitedSectors[ newsecnum ] )
+				{
+					ok = 0;
+					break;
+				}
 				#if 0
 				// jff 2/26/98
 				// link the stair chain in both directions
@@ -939,6 +955,7 @@ auto RT_GetStairsSectors( int tag, line_t* line ) -> std::vector< int >
 				secnum = newsecnum;
 
 				result_sectornums.push_back( sec->Index() );
+				visitedSectors[ newsecnum ] = true;
 
 				#if 0
 				// create and initialize a thinker for the next step

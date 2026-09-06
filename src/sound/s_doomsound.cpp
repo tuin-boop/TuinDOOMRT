@@ -184,6 +184,50 @@ static FString LookupMusic(const char* musicname, int& order)
 //
 //==========================================================================
 
+#if HAVE_RT
+static bool IsRTResourceContainer(int container)
+{
+	const char* path = fileSystem.GetResourceFileFullName(container);
+	if (path == nullptr) return false;
+
+	size_t length = strlen(path);
+	while (length > 0 && (path[length - 1] == '/' || path[length - 1] == '\\')) length--;
+	if (length < 6) return false;
+
+	const char* suffix = path + length - 6;
+	return (!strnicmp(suffix, "rt/wad", 6) || !strnicmp(suffix, "rt\\wad", 6)) &&
+		(length == 6 || path[length - 7] == '/' || path[length - 7] == '\\');
+}
+
+static int PreferUserMusicOverRT(const char* musicname, int lumpnum)
+{
+	if (lumpnum < 0 || !IsRTResourceContainer(fileSystem.GetFileContainer(lumpnum)))
+	{
+		return lumpnum;
+	}
+
+	// The RT package contains remastered versions of Doom's stock music and is
+	// normally loaded last. Keep those as the fallback, but let a PWAD/PK3's
+	// own music win when it replaces the same lump (D_RUNNIN, D_STALKS, etc.).
+	int userMusic = -1;
+	int lastlump = 0;
+	int candidate;
+	while ((candidate = fileSystem.FindLump(musicname, &lastlump, true)) != -1)
+	{
+		const int container = fileSystem.GetFileContainer(candidate);
+		const int namespc = fileSystem.GetFileNamespace(candidate);
+		if (container > fileSystem.GetMaxIwadNum() &&
+			!IsRTResourceContainer(container) &&
+			(namespc == FileSys::ns_music || namespc == FileSys::ns_global))
+		{
+			userMusic = candidate;
+		}
+	}
+
+	return userMusic >= 0 ? userMusic : lumpnum;
+}
+#endif
+
 static FileReader OpenMusic(const char* musicname)
 {
 	FileReader reader;
@@ -192,6 +236,9 @@ static FileReader OpenMusic(const char* musicname)
 		int lumpnum;
 		lumpnum = fileSystem.CheckNumForFullName(musicname);
 		if (lumpnum == -1) lumpnum = fileSystem.CheckNumForName(musicname, FileSys::ns_music);
+#if HAVE_RT
+		lumpnum = PreferUserMusicOverRT(musicname, lumpnum);
+#endif
 		if (lumpnum == -1)
 		{
 			Printf("Music \"%s\" not found\n", musicname);
@@ -1431,4 +1478,3 @@ CCMD(snd_reset)
 {
 	S_SoundReset();
 }
-

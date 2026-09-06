@@ -443,6 +443,81 @@ std::string RT_GetResourceSceneComponent( int resourceIndex )
 
     return resource;
 }
+
+void RT_EnsureSceneMaterialJunction( const char* sceneName )
+{
+    if( !sceneName || sceneName[ 0 ] == '\0' )
+    {
+        return;
+    }
+
+    std::error_code ec;
+    const std::filesystem::path sceneDirectory =
+        std::filesystem::absolute( std::filesystem::path{ "rt/scenes" } / sceneName, ec );
+    if( ec )
+    {
+        return;
+    }
+
+    const std::filesystem::path materialDirectory =
+        std::filesystem::absolute( "rt/mat_src", ec );
+    if( ec || !std::filesystem::is_directory( materialDirectory, ec ) )
+    {
+        return;
+    }
+
+    std::filesystem::create_directories( sceneDirectory, ec );
+    if( ec )
+    {
+        Printf( TEXTCOLOR_ORANGE "Could not prepare RT scene directory: %s\n",
+                sceneDirectory.string().c_str() );
+        return;
+    }
+
+    const std::filesystem::path junction = sceneDirectory / "mat_junction";
+    if( std::filesystem::is_directory( junction, ec ) )
+    {
+        return;
+    }
+
+    // RTGL's fallback junction script is asynchronous, so a newly generated
+    // custom-WAD scene can be inspected before its material path exists. Make
+    // the NTFS junction synchronously before starting the first frame.
+    std::wstring command = L"cmd.exe /D /C mklink /J \"";
+    command += junction.wstring();
+    command += L"\" \"";
+    command += materialDirectory.wstring();
+    command += L"\"";
+
+    STARTUPINFOW startupInfo{};
+    startupInfo.cb          = sizeof( startupInfo );
+    startupInfo.dwFlags     = STARTF_USESHOWWINDOW;
+    startupInfo.wShowWindow = SW_HIDE;
+    PROCESS_INFORMATION processInfo{};
+
+    if( CreateProcessW( nullptr,
+                        command.data(),
+                        nullptr,
+                        nullptr,
+                        FALSE,
+                        CREATE_NO_WINDOW,
+                        nullptr,
+                        nullptr,
+                        &startupInfo,
+                        &processInfo ) )
+    {
+        WaitForSingleObject( processInfo.hProcess, INFINITE );
+        CloseHandle( processInfo.hThread );
+        CloseHandle( processInfo.hProcess );
+    }
+
+    ec.clear();
+    if( !std::filesystem::is_directory( junction, ec ) )
+    {
+        Printf( TEXTCOLOR_ORANGE "Could not create RT scene material junction: %s\n",
+                junction.string().c_str() );
+    }
+}
 } // namespace
 
 const char* RT_GetMapName()
@@ -5034,10 +5109,13 @@ void RTFrameBuffer::RT_BeginFrame()
 
     RgStaticSceneStatusFlags staticscene_status = 0;
 
+    const char* sceneName = RT_GetMapName();
+    RT_EnsureSceneMaterialJunction( sceneName );
+
     auto info = RgStartFrameInfo{
         .sType                  = RG_STRUCTURE_TYPE_START_FRAME_INFO,
         .pNext                  = &fluid_params,
-        .pMapName               = RT_GetMapName(),
+        .pMapName               = sceneName,
         .ignoreExternalGeometry = false,
         .vsync                  = cvar::rt_vsync,
         .hdr                    = cvar::rt_hdr_available ? cvar::rt_hdr : false,
